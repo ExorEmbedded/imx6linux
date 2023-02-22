@@ -76,7 +76,8 @@
 	  compatible = "exor,plxx_manager";
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
-	  sel-gpio = <&gpio3 15 0>;
+	  sel-gpio = <&gpio3 9 0>;
+	  led-gpio = <&gpio1 5 0>;
 	  index = <0>;
 	  status = "okay";
 	};
@@ -85,8 +86,29 @@
 	  compatible = "exor,plxx_manager";
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
-	  sel-gpio = <&gpio3 16 0>;
+	  sel-gpio = <&gpio3 8 0>;
+	  led-gpio = <&gpio1 24 0>;
 	  index = <1>;
+	  status = "okay";
+	};
+
+	plxx2: plugin2 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio3 7 0>;
+	  led-gpio = <&gpio1 25 0>;
+	  index = <2>;
+	  status = "okay";
+	};
+
+	plxx3: plugin3 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio3 6 0>;
+	  led-gpio = <&gpio4 11 0>;
+	  index = <3>;
 	  status = "okay";
 	};
 };
@@ -399,6 +421,14 @@
 		pinctrl_hog_1: hoggrp {
 			fsl,pins = <
 				MX6UL_PAD_LCD_DATA05__GPIO3_IO10    0x13059 /* DIS_PGOOD, default PD */
+				MX6UL_PAD_LCD_DATA04__GPIO3_IO09    0x13059 /* PLSEL1 */
+				MX6UL_PAD_LCD_DATA03__GPIO3_IO08    0x13059 /* PLSEL2 */
+				MX6UL_PAD_LCD_DATA02__GPIO3_IO07    0x13059 /* PLSEL3 */
+				MX6UL_PAD_LCD_DATA01__GPIO3_IO06    0x13059 /* PLSEL4 */
+				MX6UL_PAD_GPIO1_IO05__GPIO1_IO05    0x13059 /* LED_MOD1 */
+				MX6UL_PAD_UART3_TX_DATA__GPIO1_IO24 0x13059 /* LED_MOD2 */
+				MX6UL_PAD_UART3_RX_DATA__GPIO1_IO25 0x13059 /* LED_MOD3 */
+				MX6UL_PAD_NAND_WP_B__GPIO4_IO11     0x13059 /* LED_MOD4 */
 				>;
 		};
 
