@@ -101,8 +101,11 @@
  *1.44			SS							26.09.2022	Added display code #80: Futurelabs FLR-101HML00PUFA2#02 (1280x800 WE20-10).
  *1.45			SS							27.09.2022	Added display code #81: same as display #76 but dimming positive (new carrier WU10A1)
  *			 								27.09.2022	Added display code #82: Futurelabs FLD-121GML20PC001#00 (Innolux G121XCE-L01) for GE22 (1024x768) 
+ *1.46			SS							05.10.2022	Added display code #83: 
+ *1.47			GP							02.02.2023	Added display code #84: DMB KD101WXFLD038-C045B (10.1", 1280x800) for SE21 X10 handheld 
+ *1.48			SS							01.03.2023	Added display code #85: Futurelabs DISPJST-101N002#01 for new jSMART10x 
  *
- * NEXT AVAILABLE DISPLAY CODE: 83
+ * NEXT AVAILABLE DISPLAY CODE: 86
  */
  
 #ifndef DISPLAYCONFIG_H
@@ -1376,6 +1379,84 @@ static struct t_DisplayParams displayconfig[] = {
         .pwmfreq        = 200,			
         .brightness_min = 1,		
         .brightness_max = 100,
+    },
+    /* 83: FutureLabs FLC-070FMLG000002#00 for WE22*/
+    {
+        .dispid    = 83,
+        .rezx      = 1024, 
+        .rezy      = 600, 
+        .bpp       = 24,
+        
+        .pclk_freq = 51000, 
+        .pclk_inv  = 1,  // inverted clock polarity due SN65LVDS93 CLKSEL high (sample on rising edge)
+        
+        .hs_fp     = 10, 
+        .hs_bp     = 320, 
+        .hs_w      = 10, 
+        .hs_inv    = 1,
+        
+        .vs_fp     = 10, 
+        .vs_bp     = 35, 
+        .vs_w      = 10, 
+        .vs_inv    = 1,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 6500,			//keyboard led dimming driven by TPS61165 (avoid EasyScale min freq)
+        .brightness_min = 0x3200,		//min duty cycle 0.5%
+        .brightness_max = 80,
+    },    
+    /* 84: DMB KD101WXFLD038-C045B (10.1", 1280x800) for SE21 X10 handheld  */
+    {
+        .dispid    = 84,
+        .rezx      = 1280, 
+        .rezy      = 800, 
+        .bpp       = 24,
+        
+        .pclk_freq = 66600,         //US04 supporta un numero limitato di freq (fare sempre check con tabella PLL)
+        .pclk_inv  = 1,							//inverted clock polarity (compatibility with IMX.6 bug)
+        
+        .hs_fp     = 12,            
+        .hs_bp     = 86,            
+        .hs_w      = 2,             
+        .hs_inv    = 0,
+        
+        .vs_fp     = 1,             
+        .vs_bp     = 3,            
+        .vs_w      = 20,             
+        .vs_inv    = 0,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 5000,		//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.
+        .brightness_min = 1,		//min duty cycle 1% as per TI recommendation
+        .brightness_max = 65,
+    },    
+    /* 85: Futurelabs DISPJST-101N002#01 (10.1", 1280x800) for new jSMART10x  */
+    {
+        .dispid    = 85,
+        .rezx      = 1280, 
+        .rezy      = 800, 
+        .bpp       = 24,
+        
+        .pclk_freq = 66600,         //US04 supporta un numero limitato di freq (fare sempre check con tabella PLL)
+        .pclk_inv  = 1,							//inverted clock polarity (compatibility with IMX.6 bug)
+        
+        .hs_fp     = 12,            
+        .hs_bp     = 86,            
+        .hs_w      = 2,             
+        .hs_inv    = 0,
+        
+        .vs_fp     = 1,             
+        .vs_bp     = 3,            
+        .vs_w      = 20,             
+        .vs_inv    = 0,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 6500,			//TPS61165 (avoid EasyScale min freq)
+        .brightness_min = 0x3200,		//min duty cycle 0.5%
+        .brightness_max = 65,
     },    
     /* END OF LIST */
     {
