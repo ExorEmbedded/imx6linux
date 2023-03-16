@@ -1496,25 +1496,6 @@ err_check_bar_mapping:
   return rc;
 }  
 
-/*
- * Remove one instance of the TSE over PCIe core
- */
-static void altera_tse_pciedev_remove(struct pci_dev *pdev)
-{
-  struct net_device *ndev = pci_get_drvdata(pdev);
-  struct altera_tse_private *priv = netdev_priv(ndev);
-  if (ndev) 
-  {
-    unregister_netdev(ndev);
-    netif_napi_del(&priv->napi);
-    altera_tse_mdio_destroy(ndev);
-    free_netdev(ndev);
-    pci_iounmap(pdev, priv->mac_dev);
-    pci_release_regions(pdev);
-    pci_disable_device(pdev);
-  }	
-}
-
 static const struct pci_device_id altera_tse_pciedev_ids[] = {
 	{ PCI_DEVICE(0x1172, 0xe3ac) },
 	{ PCI_DEVICE(0x1172, 0xf3ac) },
@@ -1525,7 +1506,7 @@ MODULE_DEVICE_TABLE(pci, altera_tse_pciedev_ids);
 
 static struct pci_driver altera_tse_driver = {
 	.probe		= altera_tse_pciedev_probe,
-	.remove		= altera_tse_pciedev_remove,
+	.remove		= NULL,
 	.suspend	= NULL,
 	.resume		= NULL,
 	.name	= ALTERA_TSE_RESOURCE_NAME,

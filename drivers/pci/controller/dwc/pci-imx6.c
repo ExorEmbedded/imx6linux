@@ -2760,10 +2760,12 @@ err_ret:
 
 static void imx6_pcie_shutdown(struct platform_device *pdev)
 {
+#ifndef CONFIG_SOC_IMX6Q	
 	struct imx6_pcie *imx6_pcie = platform_get_drvdata(pdev);
 
 	/* bring down link, so bootloader gets clean state in case of reboot */
 	imx6_pcie_assert_core_reset(imx6_pcie);
+#endif
 }
 
 static const struct imx6_pcie_drvdata drvdata[] = {
@@ -3000,5 +3002,11 @@ static int __init imx6_pcie_init(void)
 
 	return platform_driver_register(&imx6_pcie_driver);
 }
+
+#ifndef CONFIG_SOC_IMX6Q
 device_initcall(imx6_pcie_init);
+#else
+//PCI-e driver probed later on US03 to avoid issues with the altera_tse driver
+late_initcall(imx6_pcie_init);
+#endif
 MODULE_LICENSE("GPL v2");
