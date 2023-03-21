@@ -314,7 +314,10 @@ static int sn65dsi83_probe(struct i2c_client *i2c,
     struct sn65dsi83 *sn65dsi83;
     struct device *dev = &i2c->dev;
     int ret;
-
+	
+	if(hw_dispid == 1)
+	  return -1;
+	
     dev_info(dev,"%s\n",__func__);
     if (!dev->of_node)
         return -EINVAL;
