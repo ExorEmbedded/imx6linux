@@ -618,6 +618,9 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
 	int connector_type;
 	u32 bus_flags;
 	int err;
+	
+	if(hw_dispid == 1)
+		return -1;
 
 	panel = devm_kzalloc(dev, sizeof(*panel), GFP_KERNEL);
 	if (!panel)

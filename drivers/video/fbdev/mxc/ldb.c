@@ -797,6 +797,9 @@ static int ldb_probe(struct platform_device *pdev)
 	int en_vdd_gpio, err;
 	enum of_gpio_flags flags;
 
+	if(hw_dispid == 1)
+	  return -1;
+	
 	ldb = devm_kzalloc(dev, sizeof(*ldb), GFP_KERNEL);
 	if (!ldb)
 		return -ENOMEM;
