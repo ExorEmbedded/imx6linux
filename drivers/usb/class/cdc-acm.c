@@ -1872,6 +1872,13 @@ static const struct usb_device_id acm_ids[] = {
 	},
 #endif
 
+#if IS_ENABLED(CONFIG_USB_EKM32)
+	{ USB_DEVICE(0x0483, 0xa0ca),
+	.driver_info = IGNORE_DEVICE,
+	},
+#endif
+
+
 	/*Samsung phone in firmware update mode */
 	{ USB_DEVICE(0x04e8, 0x685d),
 	.driver_info = IGNORE_DEVICE,
