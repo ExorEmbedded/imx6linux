@@ -501,6 +501,13 @@ config PLXX_MANAGER
 	depends on EEPROM_AT24
 	help
 	    Say Y to add the plugin plxx manager driver.
+
+config PLXX_MANAGER_DA22
+	bool "Plugin plxx manager driver for the DA22 target"
+	depends on PLXX_MANAGER
+	help
+	    Say Y to build the specific plugin plxx manager driver option for the DA22 target.
+	    If unsure say N.
 	    
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

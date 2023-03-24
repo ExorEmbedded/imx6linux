@@ -166,6 +166,12 @@ static int plcm09_init(struct plxx_data *data)
   goto init_end;
 #endif
 
+#ifdef CONFIG_PLXX_MANAGER_DA22
+  // PLCM09 disabled on NS01 DA22 target
+  ret = -1;
+  goto init_end;
+#endif
+  
   //Try to init U3 i2c gpio expander
   msg.addr = PLCM09_U3ADDR;
   msg.flags = 0;
