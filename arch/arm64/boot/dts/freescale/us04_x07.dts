@@ -229,23 +229,26 @@
 		compatible = "ti,lp5562";
 		reg = <0x30>;
 		clock-mode = /bits/ 8 <1>;
+		enable-gpio = <&gpio4 17 0>;
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		chan@0 {
 			chan-name = "R";
-			led-cur = /bits/ 8 <0x3C>;
+			led-cur = /bits/ 8 <0x50>;
 			max-cur = /bits/ 8 <0x60>;
             color = <LED_COLOR_ID_RED>;
+            linux,default-trigger = "default-on";
 			reg = <0>;
 		};
 
 		chan@1 {
 			chan-name = "G";
-			led-cur = /bits/ 8 <0x20>;
+			led-cur = /bits/ 8 <0x14>;
 			max-cur = /bits/ 8 <0x60>;
             color = <LED_COLOR_ID_GREEN>;
+            linux,default-trigger = "default-on";
 			reg = <1>;
 		};
 
@@ -351,6 +354,7 @@
 				MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20        0x1c4   /* spigo1 */
 				MX8MM_IOMUXC_SAI5_RXFS_GPIO3_IO19       0x1c4   /* spigo2 */
 				MX8MM_IOMUXC_NAND_DATA02_GPIO3_IO8      0x1c4   /* en_vibr */
+				MX8MM_IOMUXC_SAI1_TXD5_GPIO4_IO17       0x004   /* disable RED LED HW */
 			>;
 		};
 
