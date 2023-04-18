@@ -434,6 +434,16 @@ static void sn65dsi83_atomic_enable(struct drm_bridge *bridge,
 		     REG_DSI_CLK_CHA_DSI_CLK_RANGE(sn65dsi83_get_dsi_range(ctx, mode)));
 	regmap_write(ctx->regmap, REG_RC_DSI_CLK,
 		     REG_RC_DSI_CLK_DSI_CLK_DIVIDER(sn65dsi83_get_dsi_div(ctx)));
+	
+	if((mode->htotal - mode->hsync_start)==88)
+	{
+		u8 tmp;
+		
+		tmp = 2 * (sn65dsi83_get_dsi_range(ctx, mode));
+		regmap_write(ctx->regmap, REG_DSI_CLK, REG_DSI_CLK_CHA_DSI_CLK_RANGE(tmp));
+		tmp = 2 * (sn65dsi83_get_dsi_div(ctx) + 1) - 1;
+		regmap_write(ctx->regmap, REG_RC_DSI_CLK, REG_RC_DSI_CLK_DSI_CLK_DIVIDER(tmp));
+	}
 
 	/* Set number of DSI lanes and LVDS link config. */
 	regmap_write(ctx->regmap, REG_DSI_LANE,

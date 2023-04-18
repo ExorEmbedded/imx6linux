@@ -1263,6 +1263,12 @@ int sec_mipi_dsim_check_pll_out(void *driver_private,
 	pix_clk = mode->clock;
 	bit_clk = DIV_ROUND_UP(pix_clk * bpp, dsim->lanes);
 
+#ifdef CONFIG_DRM_TI_SN65DSI83	
+	if((mode->htotal - mode->hsync_start)==88)
+	{
+		bit_clk *=2;
+	}
+#endif
 	if (bit_clk * 1000 > pdata->max_data_rate) {
 		dev_err(dsim->dev,
 			"reuest bit clk freq exceeds lane's maximum value\n");
