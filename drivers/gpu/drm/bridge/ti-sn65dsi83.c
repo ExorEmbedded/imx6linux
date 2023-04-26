@@ -514,7 +514,7 @@ static void sn65dsi83_atomic_enable(struct drm_bridge *bridge,
 
 	/* Enable PLL */
 	regmap_write(ctx->regmap, REG_RC_PLL_EN, REG_RC_PLL_EN_PLL_EN);
-	usleep_range(3000, 4000);
+	usleep_range(10000, 12000);
 	ret = regmap_read_poll_timeout(ctx->regmap, REG_RC_LVDS_PLL, pval,
 				       pval & REG_RC_LVDS_PLL_PLL_EN_STAT,
 				       1000, 100000);
@@ -527,6 +527,7 @@ static void sn65dsi83_atomic_enable(struct drm_bridge *bridge,
 
 	/* Trigger reset after CSR register update. */
 	regmap_write(ctx->regmap, REG_RC_RESET, REG_RC_RESET_SOFT_RESET);
+	usleep_range(10000, 12000);
 
 	/* Clear all errors that got asserted during initialization. */
 	regmap_read(ctx->regmap, REG_IRQ_STAT, &pval);
@@ -537,6 +538,7 @@ static void sn65dsi83_atomic_disable(struct drm_bridge *bridge,
 				     struct drm_bridge_state *old_bridge_state)
 {
 	struct sn65dsi83 *ctx = bridge_to_sn65dsi83(bridge);
+	printk("%s\n",__func__);
 
 	/* Clear reset, disable PLL */
 	regmap_write(ctx->regmap, REG_RC_RESET, 0x00);
@@ -547,6 +549,7 @@ static void sn65dsi83_atomic_post_disable(struct drm_bridge *bridge,
 					  struct drm_bridge_state *old_bridge_state)
 {
 	struct sn65dsi83 *ctx = bridge_to_sn65dsi83(bridge);
+	printk("%s\n",__func__);
 
 	/* Put the chip in reset, pull EN line low. */
 	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
