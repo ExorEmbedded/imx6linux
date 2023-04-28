@@ -71,6 +71,18 @@
 			gpios = <&tca6408 6 0>;
 			default-state = "off";
 		};
+		
+		led@3 {
+			label = "en_rs485bias";
+			gpios = <&gpio3 19 0>;
+			default-state = "off";
+		};
+
+		led@4 {
+			label = "pl_rs485bias";
+			gpios = <&gpio4 11 0>;
+			default-state = "off";
+		};
 	};
 
 	beeper {
@@ -90,7 +102,6 @@
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
 	  sel-gpio = <&gpio3 9 0>;
-	  led-gpio = <&gpio1 5 0>;
 	  index = <0>;
 	  status = "okay";
 	};
@@ -100,7 +111,6 @@
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
 	  sel-gpio = <&gpio3 8 0>;
-	  led-gpio = <&gpio1 24 0>;
 	  index = <1>;
 	  status = "okay";
 	};
@@ -110,7 +120,6 @@
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
 	  sel-gpio = <&gpio3 7 0>;
-	  led-gpio = <&gpio1 25 0>;
 	  index = <2>;
 	  status = "okay";
 	};
@@ -120,7 +129,6 @@
 	  nvmem-names = "eeprom", "ioexp";
 	  nvmem = <&plxxseeprom>, <&plxxioexp>;
 	  sel-gpio = <&gpio3 6 0>;
-	  led-gpio = <&gpio4 11 0>;
 	  index = <3>;
 	  status = "okay";
 	};
@@ -440,10 +448,10 @@
 				MX6UL_PAD_LCD_DATA03__GPIO3_IO08    0x13059 /* PLSEL2 */
 				MX6UL_PAD_LCD_DATA02__GPIO3_IO07    0x13059 /* PLSEL3 */
 				MX6UL_PAD_LCD_DATA01__GPIO3_IO06    0x13059 /* PLSEL4 */
-				MX6UL_PAD_GPIO1_IO05__GPIO1_IO05    0x13059 /* LED_MOD1 */
-				MX6UL_PAD_UART3_TX_DATA__GPIO1_IO24 0x13059 /* LED_MOD2 */
-				MX6UL_PAD_UART3_RX_DATA__GPIO1_IO25 0x13059 /* LED_MOD3 */
-				MX6UL_PAD_NAND_WP_B__GPIO4_IO11     0x13059 /* LED_MOD4 */
+				MX6UL_PAD_GPIO1_IO05__GPIO1_IO05    0x13059 /* GPIO1 (i2c mux) */
+				MX6UL_PAD_UART3_TX_DATA__GPIO1_IO24 0x13059 /* GPIO2 (i2c mux) */
+				MX6UL_PAD_NAND_WP_B__GPIO4_IO11     0x13059 /* PL_485_BIAS */
+				MX6UL_PAD_LCD_DATA14__GPIO3_IO19    0x13059 /* EN_485_BIAS */
 				>;
 		};
 
