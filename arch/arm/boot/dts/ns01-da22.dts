@@ -132,6 +132,186 @@
 	  index = <3>;
 	  status = "okay";
 	};
+	
+	i2cmux {
+		compatible = "i2c-mux-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mux-gpios = <&gpio1 5 0 &gpio1 24 0>;
+		i2c-parent = <&i2c4>;
+
+		i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "R";
+					led-cur = /bits/ 8 <0x3C>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "G";
+					led-cur = /bits/ 8 <0x20>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					reg = <3>;
+				};
+			};				
+		};
+
+		i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "R";
+					led-cur = /bits/ 8 <0x3C>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "G";
+					led-cur = /bits/ 8 <0x20>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					reg = <3>;
+				};
+			};				
+		};
+		
+		i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "R";
+					led-cur = /bits/ 8 <0x3C>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "G";
+					led-cur = /bits/ 8 <0x20>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					reg = <3>;
+				};
+			};				
+		};
+		
+		i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "R";
+					led-cur = /bits/ 8 <0x3C>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "G";
+					led-cur = /bits/ 8 <0x20>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					reg = <3>;
+				};
+			};				
+		};
+	};	
 };
 
 &clks {
