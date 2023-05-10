@@ -10,6 +10,7 @@
 
 #include <dt-bindings/input/input.h>
 #include "imx6ul.dtsi"
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Exor NanoSom01 i.MX6 UltraLite Da22 Board";
@@ -154,30 +155,35 @@
 				#size-cells = <0>;
 
 				chan@0 {
-					chan-name = "R";
-					led-cur = /bits/ 8 <0x3C>;
+					chan-name = "pl0_R";
+					led-cur = /bits/ 8 <0x50>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
 					reg = <0>;
 				};
 
 				chan@1 {
-					chan-name = "G";
-					led-cur = /bits/ 8 <0x20>;
+					chan-name = "pl0_G";
+					led-cur = /bits/ 8 <0x14>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
 					reg = <1>;
 				};
 
 				chan@2 {
-					chan-name = "B";
+					chan-name = "pl0_B";
 					led-cur = /bits/ 8 <0x60>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
 					reg = <2>;
 				};
 
 				chan@3 {
-					chan-name = "W";
+					chan-name = "pl0_W";
 					led-cur = /bits/ 8 <0x0>;
 					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
 					reg = <3>;
 				};
 			};				
@@ -197,30 +203,35 @@
 				#size-cells = <0>;
 
 				chan@0 {
-					chan-name = "R";
-					led-cur = /bits/ 8 <0x3C>;
+					chan-name = "pl1_R";
+					led-cur = /bits/ 8 <0x50>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
 					reg = <0>;
 				};
 
 				chan@1 {
-					chan-name = "G";
-					led-cur = /bits/ 8 <0x20>;
+					chan-name = "pl1_G";
+					led-cur = /bits/ 8 <0x14>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
 					reg = <1>;
 				};
 
 				chan@2 {
-					chan-name = "B";
+					chan-name = "pl1_B";
 					led-cur = /bits/ 8 <0x60>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
 					reg = <2>;
 				};
 
 				chan@3 {
-					chan-name = "W";
+					chan-name = "pl1_W";
 					led-cur = /bits/ 8 <0x0>;
 					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
 					reg = <3>;
 				};
 			};				
@@ -240,30 +251,35 @@
 				#size-cells = <0>;
 
 				chan@0 {
-					chan-name = "R";
-					led-cur = /bits/ 8 <0x3C>;
+					chan-name = "pl2_R";
+					led-cur = /bits/ 8 <0x50>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
 					reg = <0>;
 				};
 
 				chan@1 {
-					chan-name = "G";
-					led-cur = /bits/ 8 <0x20>;
+					chan-name = "pl2_G";
+					led-cur = /bits/ 8 <0x14>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
 					reg = <1>;
 				};
 
 				chan@2 {
-					chan-name = "B";
+					chan-name = "pl2_B";
 					led-cur = /bits/ 8 <0x60>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
 					reg = <2>;
 				};
 
 				chan@3 {
-					chan-name = "W";
+					chan-name = "pl2_W";
 					led-cur = /bits/ 8 <0x0>;
 					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
 					reg = <3>;
 				};
 			};				
@@ -283,30 +299,35 @@
 				#size-cells = <0>;
 
 				chan@0 {
-					chan-name = "R";
-					led-cur = /bits/ 8 <0x3C>;
+					chan-name = "pl3_R";
+					led-cur = /bits/ 8 <0x50>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
 					reg = <0>;
 				};
 
 				chan@1 {
-					chan-name = "G";
-					led-cur = /bits/ 8 <0x20>;
+					chan-name = "pl3_G";
+					led-cur = /bits/ 8 <0x14>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
 					reg = <1>;
 				};
 
 				chan@2 {
-					chan-name = "B";
+					chan-name = "pl3_B";
 					led-cur = /bits/ 8 <0x60>;
 					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
 					reg = <2>;
 				};
 
 				chan@3 {
-					chan-name = "W";
+					chan-name = "pl3_W";
 					led-cur = /bits/ 8 <0x0>;
 					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
 					reg = <3>;
 				};
 			};				
@@ -566,15 +587,18 @@
 
 		chan@0 {
 			chan-name = "R";
-			led-cur = /bits/ 8 <0x3C>;
+			led-cur = /bits/ 8 <0x50>;
 			max-cur = /bits/ 8 <0x60>;
-			reg = <0>;
+            color = <LED_COLOR_ID_RED>;
+ 			reg = <0>;
 		};
 
 		chan@1 {
 			chan-name = "G";
-			led-cur = /bits/ 8 <0x20>;
+			led-cur = /bits/ 8 <0x14>;
 			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_GREEN>;
+            linux,default-trigger = "default-on";
 			reg = <1>;
 		};
 
@@ -582,6 +606,7 @@
 			chan-name = "B";
 			led-cur = /bits/ 8 <0x60>;
 			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_BLUE>;
 			reg = <2>;
 		};
 
@@ -589,6 +614,7 @@
 			chan-name = "W";
 			led-cur = /bits/ 8 <0x0>;
 			max-cur = /bits/ 8 <0x0>;
+            color = <LED_COLOR_ID_WHITE>;
 			reg = <3>;
 		};
 	};		
