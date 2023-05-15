@@ -577,6 +577,12 @@
 	  reg = <0x4C>;
 	  status = "okay";
 	};
+
+	lis331dlh@18 {
+	  /* Accelerometer */
+	  compatible = "st,lis331dlh-accel";
+	  reg = <0x18>;
+	};
 	
 	plxxseeprom:seeprom1@57 {
 		compatible = "atmel,24c02";
