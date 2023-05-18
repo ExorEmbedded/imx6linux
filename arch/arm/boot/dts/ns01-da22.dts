@@ -820,9 +820,10 @@
 	};
 };
 
-&ecspi3 { /* spi0: spidev0,1 fro plugins */
+&ecspi3 { /* spi0: spidev0,1 for plugins */
 	fsl,spi-num-chipselects = <2>;
 	cs-gpios = <&gpio4 12 0>, <&gpio4 10 0>;
+	spi-imx,rt;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi3>;
 	status = "okay";
@@ -845,6 +846,7 @@
 &ecspi1 { /* spi1: can0, fram */
 	fsl,spi-num-chipselects = <2>;
 	cs-gpios = <&gpio4 26 0>, <&gpio1 22 0>;
+	spi-imx,rt;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1>;
 	status = "okay";
@@ -876,6 +878,7 @@
 &ecspi2 { /* can1, can2 on plugins */
 	fsl,spi-num-chipselects = <2>;
 	cs-gpios = <&gpio1 29 0>, <&gpio4 9 0>;
+	spi-imx,rt;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
 	status = "okay";
