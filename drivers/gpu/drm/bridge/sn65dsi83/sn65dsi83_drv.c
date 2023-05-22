@@ -253,7 +253,7 @@ static int sn65dsi83_parse_dt(struct device_node *np,
 	
 	/* Special case of 1280x800 10" LCD display (EK79202 controller chip) requiring to force the 2 wire DSI mode
 	 */
-	if((hw_dispid==80)||(hw_dispid==85))
+	if((hw_dispid==80)||(hw_dispid==85)||(hw_dispid==86))
 		num_lanes=2;
 
     if (num_lanes < 1 || num_lanes > 4) {

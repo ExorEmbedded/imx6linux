@@ -383,7 +383,7 @@ static int sn65dsi83_brg_configure(struct sn65dsi83_brg *brg)
 	
 	/* Special case of 1280x800 10" LCD display (EK79202 controller chip) requiring to force the 2 wire DSI mode and very specific cfg
 	 */
-	if((hw_dispid==80)||(hw_dispid==85))
+	if((hw_dispid==80)||(hw_dispid==85)||(hw_dispid==86))
 	{
 		SN65DSI83_WRITE(SN65DSI83_CHA_HSYNC_WIDTH_LO,LOW(2)); 
 		SN65DSI83_WRITE(SN65DSI83_CHA_HSYNC_WIDTH_HI,HIGH(2));

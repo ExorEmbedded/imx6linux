@@ -105,8 +105,9 @@
  *1.47			GP							02.02.2023	Added display code #84: DMB KD101WXFLD038-C045B (10.1", 1280x800) for SE21 X10 handheld 
  *1.48			SS							01.03.2023	Added display code #85: Futurelabs DISPJST-101N002#01 for new jSMART10x 
  *1.49			SS							02.03.2023	Modified display code #71: changed porches to match latest display datasheet specs
+ *1.50			SS							19.05.2023	Added display code #86: Futurelabs FLC-101HMLG000003#00 for new eX710G 
  *
- * NEXT AVAILABLE DISPLAY CODE: 86
+ * NEXT AVAILABLE DISPLAY CODE: 87
  */
  
 #ifndef DISPLAYCONFIG_H
@@ -1458,7 +1459,38 @@ static struct t_DisplayParams displayconfig[] = {
         .pwmfreq        = 6500,			//TPS61165 (avoid EasyScale min freq)
         .brightness_min = 0x3200,		//min duty cycle 0.5%
         .brightness_max = 65,
-    },    
+    }, 
+    /* 86: FutureLabs FLC-101HMLG000003#00 24 bit 1280x800 (exact timing required) */
+    {
+        .dispid    = 86,
+        .rezx      = 1280, 
+        .rezy      = 800, 
+        .bpp       = 24,
+        
+        .pclk_freq = 66600,         
+        .pclk_inv  = 1,							//inverted clock polarity due to IMX.6 bug
+        
+        .hs_fp     = 12,            
+        .hs_bp     = 86,            
+        .hs_w      = 2,             
+        .hs_inv    = 0,
+        
+        .vs_fp     = 1,             
+        .vs_bp     = 3,            
+        .vs_w      = 20,             
+        .vs_inv    = 0,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 200,          //LT3754
+#ifdef CONFIG_SOC_IMX6Q		
+        .brightness_min = 0x1000,       //min duty 0,15%
+        .brightness_max = 80,
+#else
+        .brightness_min = 0x0300,       //min duty 0,03% on US04 (no gamma correction)
+        .brightness_max = 100,          //max duty 100% on US04 
+#endif
+    },     
     /* END OF LIST */
     {
       .dispid    = NODISPLAY,
