@@ -859,7 +859,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		spi-max-frequency = <8000000>;
-		bosch,mram-cfg = <0x0 0 0 32 0 0 1 1>;
+		bosch,mram-cfg = <0x0 0 0 16 0 0 2 2>;
 		interrupt-parent = <&gpio3>;
 		interrupts = <20 IRQ_TYPE_LEVEL_LOW>;
 	};	
@@ -891,7 +891,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		spi-max-frequency = <8000000>;
-		bosch,mram-cfg = <0x0 0 0 32 0 0 1 1>;
+		bosch,mram-cfg = <0x0 0 0 16 0 0 2 2>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
 	};	
@@ -902,7 +902,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		spi-max-frequency = <8000000>;
-		bosch,mram-cfg = <0x0 0 0 32 0 0 1 1>;
+		bosch,mram-cfg = <0x0 0 0 16 0 0 2 2>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
 	};	
