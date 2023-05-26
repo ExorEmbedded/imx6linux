@@ -1067,7 +1067,7 @@ static struct t_DisplayParams displayconfig[] = {
         .blank_inv      = 0,
         
         .pwmfreq        = 200,
-        .brightness_min = 0x0800,		//min duty 0,08%
+        .brightness_min = 0x0300,		//min duty 0,03%
         .brightness_max = 100,
     },                               
     /* 71: FutureLabs FLC-101HML0000SA2 24 bit 1280x800 IMX.6 ONLY for TA19 */
@@ -1485,7 +1485,7 @@ static struct t_DisplayParams displayconfig[] = {
         .pwmfreq        = 200,          //LT3754
 #ifdef CONFIG_SOC_IMX6Q		
         .brightness_min = 0x1000,       //min duty 0,15%
-        .brightness_max = 80,
+        .brightness_max = 100,
 #else
         .brightness_min = 0x0300,       //min duty 0,03% on US04 (no gamma correction)
         .brightness_max = 100,          //max duty 100% on US04 
