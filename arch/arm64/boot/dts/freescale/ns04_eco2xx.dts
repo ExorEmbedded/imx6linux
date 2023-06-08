@@ -229,6 +229,7 @@
 &ecspi1 { /* TCAN4550 SPI2CAN device */
     fsl,spi-num-chipselects = <1>;
     cs-gpios = <&gpio5 9 0>;  /* CS0 */
+   	spi-imx,rt;
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1>;
     status = "okay";
@@ -244,7 +245,6 @@
 		bosch,mram-cfg = <0x0 0 0 16 0 0 2 2>;
 		interrupt-parent = <&gpio5>;
 		interrupts = <17 IRQ_TYPE_LEVEL_LOW>;
-		tcan,ext-phy;
 	};    
 };
 
