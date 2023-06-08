@@ -1479,7 +1479,7 @@ static int flexcan_open(struct net_device *dev)
 	int err;
 
 	err = pm_runtime_get_sync(priv->dev);
-	if (err)
+	if (err < 0)
 		return err;
 
 	err = open_candev(dev);
@@ -1731,7 +1731,7 @@ static int flexcan_probe(struct platform_device *pdev)
 	const struct of_device_id *of_id;
 	const struct flexcan_devtype_data *devtype_data;
 	struct device_node *np = pdev->dev.of_node;
-	struct net_device *dev;
+	struct net_device *dev = NULL;
 	struct flexcan_priv *priv;
 	struct regulator *reg_xceiver;
 	struct resource *mem;
