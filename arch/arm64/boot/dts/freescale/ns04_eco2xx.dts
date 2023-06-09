@@ -13,6 +13,7 @@
 /dts-v1/;
   
 #include "imx8mm_ns04.dtsi"
+#include <dt-bindings/leds/common.h>
   
 / {
 	model = "ECO2xx i.MX8MM NS04 board";
@@ -127,33 +128,46 @@
 };
 
 &i2c1 {
-	pca9633@62 {
-		compatible = "nxp,pca9633";
+	led-controller@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/ 8 <1>;
+		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x62>;
-		
-		red@0 {
-			label = "red";
+
+		chan@0 {
+			chan-name = "R";
+			led-cur = /bits/ 8 <0x50>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_RED>;
 			reg = <0>;
-			linux,default-trigger = "none";
 		};
-		green@1 {
-			label = "green";
+
+		chan@1 {
+			chan-name = "G";
+			led-cur = /bits/ 8 <0x14>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_GREEN>;
 			reg = <1>;
-			linux,default-trigger = "none";
 		};
-		blue@2 {
-			label = "blue";
+
+		chan@2 {
+			chan-name = "B";
+			led-cur = /bits/ 8 <0x60>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_BLUE>;
 			reg = <2>;
-			linux,default-trigger = "none";
 		};
-		unused@3 {
-			label = "unused";
+
+		chan@3 {
+			chan-name = "W";
+			led-cur = /bits/ 8 <0x0>;
+			max-cur = /bits/ 8 <0x0>;
+            color = <LED_COLOR_ID_WHITE>;
 			reg = <3>;
-			linux,default-trigger = "none";
 		};
-	};
+	};	
 	
 	temperature:lm75b@4c {
 		compatible = "national,lm75b";
