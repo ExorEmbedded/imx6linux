@@ -106,6 +106,9 @@
  *1.48			SS							01.03.2023	Added display code #85: Futurelabs DISPJST-101N002#01 for new jSMART10x 
  *1.49			SS							02.03.2023	Modified display code #71: changed porches to match latest display datasheet specs
  *1.50			SS							19.05.2023	Added display code #86: Futurelabs FLC-101HMLG000003#00 for new eX710G 
+ *													26.05.2023	Modified display code #70: DISPHT1560EI011 (HT1560EI01A) for eX715MG (1920x1080)
+ *                                      reduced min duty to reach zero-dimming on imx8 for eX715MG
+ *1.51			SS							15.06.2023	Modified display code #85: MAX duty set to 100% for 700cd/m2 as old jSMART10, pcn describes wrong 400cd/m2 spec
  *
  * NEXT AVAILABLE DISPLAY CODE: 87
  */
@@ -1044,7 +1047,7 @@ static struct t_DisplayParams displayconfig[] = {
         .brightness_min = 0x0F00, 		/* Brightness min=0.15% */
         .brightness_max = 85,
     }, 
-    /* 70: HTDisplay HT1560EI01AC5 DUAL LVDS 24 bit 1920x1080 IMX.6 ONLY*/
+    /* 70: HTDisplay HT1560EI01A DUAL LVDS 24 bit 1920x1080 eX715MG*/
     {
         .dispid    = 70,
         .rezx      = 1920, 
@@ -1458,7 +1461,7 @@ static struct t_DisplayParams displayconfig[] = {
         
         .pwmfreq        = 6500,			//TPS61165 (avoid EasyScale min freq)
         .brightness_min = 0x3200,		//min duty cycle 0.5%
-        .brightness_max = 65,
+        .brightness_max = 100,				//MAX duty set to 100% 
     }, 
     /* 86: FutureLabs FLC-101HMLG000003#00 24 bit 1280x800 (exact timing required) */
     {
