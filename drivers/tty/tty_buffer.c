@@ -544,6 +544,15 @@ static void flush_to_ldisc(struct kthread_work *work)
 
 }
 
+static inline void tty_flip_buffer_commit(struct tty_buffer *tail)
+{
+	/*
+	 * Paired w/ acquire in flush_to_ldisc(); ensures flush_to_ldisc() sees
+	 * buffer data.
+	 */
+	smp_store_release(&tail->commit, tail->used);
+}
+
 /**
  * tty_insert_flip_string_and_push_buffer - add characters to the tty buffer and
  *	push
@@ -588,7 +597,10 @@ int tty_insert_flip_string_and_push_buffer(struct tty_port *port,
 
 void tty_flip_buffer_push(struct tty_port *port)
 {
-	tty_schedule_flip(port);
+	struct tty_bufhead *buf = &port->buf;
+
+	tty_flip_buffer_commit(buf->tail);
+	tty_buffer_queue_work(port);
 }
 EXPORT_SYMBOL(tty_flip_buffer_push);
 
