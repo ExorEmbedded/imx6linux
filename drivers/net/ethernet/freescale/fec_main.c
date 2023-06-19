@@ -4617,7 +4617,7 @@ fec_probe(struct platform_device *pdev)
 		if (id >= 0) {
 			char name[IFNAMSIZ];
 			snprintf(name, sizeof(name), "eth%d", id);
-			ndev = alloc_netdev_mqs(sizeof(struct fec_enet_private), name, NET_NAME_UNKNOWN, ether_setup, num_tx_qs, num_rx_qs);
+			ndev = alloc_netdev_mqs(sizeof(struct fec_enet_private) + FEC_STATS_SIZE, name, NET_NAME_UNKNOWN, ether_setup, num_tx_qs, num_rx_qs);
 		}
 	}
 	if (!ndev)
