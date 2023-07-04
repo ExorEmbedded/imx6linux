@@ -4979,6 +4979,20 @@ fec_probe(struct platform_device *pdev)
 	ret = fec_enet_mii_init(pdev);
 	if (ret)
 		goto failed_mii_init;
+	
+	if (of_get_property(np, "fsl,check-phy-installed", NULL))
+	{
+		struct phy_device *phy = of_phy_find_device(phy_node);
+		if (phy)
+		{
+			put_device(&phy->mdio.dev);
+		}
+		else
+		{
+			ret = -EPROBE_DEFER;
+			goto failed_register;
+		}
+	}
 
 	/* Carrier starts down, phylib will bring it up */
 	netif_carrier_off(ndev);

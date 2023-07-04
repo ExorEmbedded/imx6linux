@@ -146,6 +146,7 @@
 	phy-mode = "rmii";
 	phy-handle = <&ethphy0>;
 	fsl,magic-packet;
+	fsl,check-phy-installed;
 	status = "okay";
 
 	mdio {
