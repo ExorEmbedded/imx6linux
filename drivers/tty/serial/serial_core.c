@@ -1301,7 +1301,7 @@ static int uart_set_rs485_config(struct uart_port *port,
 {
 	struct serial_rs485 rs485;
 	int ret;
-	unsigned long flags;
+	//BSP-5021 unsigned long flags;
 
 	if (!port->rs485_config)
 		return -ENOIOCTLCMD;
@@ -1309,9 +1309,9 @@ static int uart_set_rs485_config(struct uart_port *port,
 	if (copy_from_user(&rs485, rs485_user, sizeof(*rs485_user)))
 		return -EFAULT;
 
-	spin_lock_irqsave(&port->lock, flags);
+	//BSP-5021 spin_lock_irqsave(&port->lock, flags);
 	ret = port->rs485_config(port, &rs485);
-	spin_unlock_irqrestore(&port->lock, flags);
+	//BSP-5021 spin_unlock_irqrestore(&port->lock, flags);
 	if (ret)
 		return ret;
 
