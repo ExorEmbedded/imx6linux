@@ -460,6 +460,7 @@
     fsl,spi-num-chipselects = <2>;
     cs-gpios = <&gpio5 9 0>,  /* CS0 */
                <&gpio5 17 0>; /* CS1 */
+	spi-imx,rt;
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1>;
     status = "okay";
@@ -483,6 +484,7 @@
     fsl,spi-num-chipselects = <2>;
     cs-gpios = <&gpio5 13 0>,  /* CS0 */
                <&gpio1 7 0>;   /* CS1 */
+	spi-imx,rt;
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi2>;
     status = "okay";
@@ -516,6 +518,7 @@
     fsl,spi-num-chipselects = <2>;
     cs-gpios = <&gpio5 25 0>,  /* CS0 */
                <&gpio5 2 0>;   /* CS1 */
+	spi-imx,rt;
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi3>;
     status = "okay";
