@@ -13,6 +13,7 @@
 /dts-v1/;
   
 #include "imx8mm_ns04.dtsi"
+#include <dt-bindings/leds/common.h>
   
 / {
 	model = "DA22 i.MX8MM NS04 board";
@@ -79,6 +80,207 @@
 	  index = <3>;
 	  status = "okay";
 	};	
+	
+	i2cmux {
+		compatible = "i2c-mux-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mux-gpios = <&gpio3 20 0 &gpio3 19 0>;
+		i2c-parent = <&i2c1>;
+
+		i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "pl0_R";
+					led-cur = /bits/ 8 <0x50>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "pl0_G";
+					led-cur = /bits/ 8 <0x14>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "pl0_B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "pl0_W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
+					reg = <3>;
+				};
+			};				
+		};
+
+		i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "pl1_R";
+					led-cur = /bits/ 8 <0x50>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "pl1_G";
+					led-cur = /bits/ 8 <0x14>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "pl1_B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "pl1_W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
+					reg = <3>;
+				};
+			};				
+		};
+		
+		i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "pl2_R";
+					led-cur = /bits/ 8 <0x50>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "pl2_G";
+					led-cur = /bits/ 8 <0x14>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "pl2_B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "pl2_W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
+					reg = <3>;
+				};
+			};				
+		};
+		
+		i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led-controller@32 {
+				compatible = "ti,lp5562";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <1>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				chan@0 {
+					chan-name = "pl3_R";
+					led-cur = /bits/ 8 <0x50>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_RED>;
+					reg = <0>;
+				};
+
+				chan@1 {
+					chan-name = "pl3_G";
+					led-cur = /bits/ 8 <0x14>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_GREEN>;
+					linux,default-trigger = "default-on";
+					reg = <1>;
+				};
+
+				chan@2 {
+					chan-name = "pl3_B";
+					led-cur = /bits/ 8 <0x60>;
+					max-cur = /bits/ 8 <0x60>;
+					color = <LED_COLOR_ID_BLUE>;
+					reg = <2>;
+				};
+
+				chan@3 {
+					chan-name = "pl3_W";
+					led-cur = /bits/ 8 <0x0>;
+					max-cur = /bits/ 8 <0x0>;
+					color = <LED_COLOR_ID_WHITE>;
+					reg = <3>;
+				};
+			};				
+		};
+	};	
+	
 };
 
 &aips4 {
@@ -105,16 +307,16 @@
 /delete-node/&usbotg1;
 
 &leds{
-	auxled_green {
-		label = "auxled_green";
-		gpios = <&gpio3 0 1>;
-		default-state = "off";
-	};
-	auxled_yellow {
-		label = "auxled_yellow";
-		gpios = <&gpio3 6 1>;
-		default-state = "off";
-	};
+		led@3 {
+			label = "en_rs485bias";
+			gpios = <&gpio1 6 0>;
+			default-state = "off";
+		};
+		led@4 {
+			label = "pl_rs485bias";
+			gpios = <&gpio1 8 0>;
+			default-state = "off";
+		};
 };
 
 &pwm1 {
@@ -152,34 +354,48 @@
 		reg = <0x18>;
 	};
 
-	pca9633: pca9633@62 {
-		compatible = "nxp,pca9633";
+	led-controller@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/ 8 <1>;
+		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x62>;
-		
-		red@0 {
-			label = "red";
-			reg = <0>;
-			linux,default-trigger = "none";
+		enable-gpio = <&gpio1 5 0>; 
+
+		chan@0 {
+			chan-name = "R";
+			led-cur = /bits/ 8 <0x50>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_RED>;
+ 			reg = <0>;
 		};
-		green@1 {
-			label = "green";
+
+		chan@1 {
+			chan-name = "G";
+			led-cur = /bits/ 8 <0x14>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_GREEN>;
+            linux,default-trigger = "default-on";
 			reg = <1>;
-			linux,default-trigger = "none";
 		};
-		blue@2 {
-			label = "blue";
+
+		chan@2 {
+			chan-name = "B";
+			led-cur = /bits/ 8 <0x60>;
+			max-cur = /bits/ 8 <0x60>;
+            color = <LED_COLOR_ID_BLUE>;
 			reg = <2>;
-			linux,default-trigger = "none";
 		};
-		unused@3 {
-			label = "unused";
+
+		chan@3 {
+			chan-name = "W";
+			led-cur = /bits/ 8 <0x0>;
+			max-cur = /bits/ 8 <0x0>;
+            color = <LED_COLOR_ID_WHITE>;
 			reg = <3>;
-			linux,default-trigger = "none";
 		};
-	};
-	
+	};			
 };
 
 &fec1 {
@@ -336,8 +552,11 @@
 				MX8MM_IOMUXC_NAND_CE2_B_GPIO3_IO3       0x1c4 /* plugin sel #1 */  
 				MX8MM_IOMUXC_NAND_CE3_B_GPIO3_IO4       0x1c4 /* plugin sel #2 */  
 				MX8MM_IOMUXC_NAND_CLE_GPIO3_IO5         0x1c4 /* plugin sel #3 */
-				MX8MM_IOMUXC_NAND_ALE_GPIO3_IO0         0x1c4 /* auxled_green  */
-				MX8MM_IOMUXC_NAND_DATA00_GPIO3_IO6      0x1c4 /* auxled_green  */
+				MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6       0x1c4 /* en_rs485bias  */
+				MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8       0x1c4 /* pl_rs485bias  */
+				MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20        0x1c4 /* i2c_mux_gpio1 */
+				MX8MM_IOMUXC_SAI5_RXFS_GPIO3_IO19       0x1c4 /* i2c_mux_gpio1 */
+				MX8MM_IOMUXC_GPIO1_IO05_GPIO1_IO5       0x1c4 /* PG_D          */
 			>;
 		};
 
