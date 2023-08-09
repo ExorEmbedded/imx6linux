@@ -196,9 +196,9 @@ static void matrix_keypad_scan(struct work_struct *work)
 					 new_state[col] & (1 << row));
 
 			if(new_state[col] & (1 << row))
-				keypad->raw_keymap = keypad->raw_keymap | (1 << ((col*4)+row));
+				keypad->raw_keymap = keypad->raw_keymap | (1 << ((col*pdata->num_row_gpios)+row));
 			else
-				keypad->raw_keymap = keypad->raw_keymap & ~(1<<((col*4)+row));
+				keypad->raw_keymap = keypad->raw_keymap & ~(1<<((col*pdata->num_row_gpios)+row));
 		}
 	}
 #ifdef CONFIG_KEYBOARD_MATRIX_SHUTDOWN
