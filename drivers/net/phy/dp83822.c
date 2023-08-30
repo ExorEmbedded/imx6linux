@@ -455,11 +455,20 @@ static int dp8382x_config_init(struct phy_device *phydev)
 static int dp83822_phy_reset(struct phy_device *phydev)
 {
 	int err;
-
+	
+#ifdef CONFIG_PLXX_MANAGER_DA22
+	/* BSP-5219: Use HW_RESET command on NS01 DA22 target, since we have no RESET_OUT gpio line available to perform HW RESET_OUT
+	 */
+	printk("dp83822_phy_reset: HW_RESET\n");
+	err = phy_write(phydev, MII_DP83822_RESET_CTRL, DP83822_HW_RESET);
+	if (err < 0)
+		return err;
+#else
+	printk("dp83822_phy_reset: SW_RESET\n");
 	err = phy_write(phydev, MII_DP83822_RESET_CTRL, DP83822_SW_RESET);
 	if (err < 0)
 		return err;
-
+#endif
 	return phydev->drv->config_init(phydev);
 }
 
