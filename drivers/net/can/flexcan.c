@@ -180,17 +180,18 @@
 
 /* FLEXCAN interrupt flag register (IFLAG) bits */
 /* Errata ERR005829 step7: Reserve first valid MB */
-#define FLEXCAN_TX_MB_RESERVED_OFF_FIFO	8
-#define FLEXCAN_TX_MB_OFF_FIFO		9
+#define FLEXCAN_TX_MB_RESERVED_OFF_FIFO		8
 #define FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP	0
-#define FLEXCAN_TX_MB_OFF_TIMESTAMP		1
-#define FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP_FD		0
-#define FLEXCAN_TX_MB_OFF_TIMESTAMP_FD		1
-#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FIRST	(FLEXCAN_TX_MB_OFF_TIMESTAMP + 1)
-#define FLEXCAN_RX_MB_OFF_TIMESTAMP_LAST	63
-#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FD_FIRST	(FLEXCAN_TX_MB_OFF_TIMESTAMP_FD + 1)
-#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FD_LAST	13
-#define FLEXCAN_IFLAG_MB(x)		BIT(x)
+#define FLEXCAN_TX_MB				63
+#define FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP_FD	0
+#define FLEXCAN_TX_MB_OFF_TIMESTAMP_FD		13
+#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FIRST	(FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP + 1)
+#define FLEXCAN_RX_MB_OFF_TIMESTAMP_LAST	(FLEXCAN_TX_MB - 1)
+#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FD_FIRST	(FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP_FD + 1)
+#define FLEXCAN_RX_MB_OFF_TIMESTAMP_FD_LAST	(FLEXCAN_TX_MB_OFF_TIMESTAMP_FD - 1)
+#define FLEXCAN_IFLAG1_MB_NUM		32
+#define FLEXCAN_IFLAG1_MB(x)		BIT(x)
+#define FLEXCAN_IFLAG2_MB(x)		BIT((x) & 0x1f)
 #define FLEXCAN_IFLAG_RX_FIFO_OVERFLOW	BIT(7)
 #define FLEXCAN_IFLAG_RX_FIFO_WARN	BIT(6)
 #define FLEXCAN_IFLAG_RX_FIFO_AVAILABLE	BIT(5)
@@ -1026,8 +1027,13 @@ static unsigned int flexcan_mailbox_read(struct can_rx_offload *offload,
 			flexcan_write(BIT(n - 32), &regs->iflag2);
 	} else {
 		flexcan_write(FLEXCAN_IFLAG_RX_FIFO_AVAILABLE, &regs->iflag1);
-		flexcan_read(&regs->timer);
 	}
+	
+	/* Read the Free Running Timer. It is optional but recommended
+	 * to unlock Mailbox as soon as possible and make it available
+	 * for reception.
+	 */
+	flexcan_read(&regs->timer);	
 
 	return 1;
 }
@@ -1038,9 +1044,15 @@ static inline u64 flexcan_read_reg_iflag_rx(struct flexcan_priv *priv)
 	struct flexcan_regs __iomem *regs = priv->regs;
 	u32 iflag1, iflag2;
 
-	iflag2 = flexcan_read(&regs->iflag2) & priv->reg_imask2_default;
-	iflag1 = flexcan_read(&regs->iflag1) & priv->reg_imask1_default &
-		~FLEXCAN_IFLAG_MB(priv->tx_mb_idx);
+	if (priv->tx_mb_idx >= FLEXCAN_IFLAG1_MB_NUM) {
+		iflag2 = flexcan_read(&regs->iflag2) & priv->reg_imask2_default &
+			~FLEXCAN_IFLAG2_MB(priv->tx_mb_idx);
+		iflag1 = flexcan_read(&regs->iflag1) & priv->reg_imask1_default;
+	} else {
+		iflag2 = flexcan_read(&regs->iflag2) & priv->reg_imask2_default;
+		iflag1 = flexcan_read(&regs->iflag1) & priv->reg_imask1_default &
+			~FLEXCAN_IFLAG1_MB(priv->tx_mb_idx);
+	}
 
 	return (u64)iflag2 << 32 | iflag1;
 }
@@ -1052,10 +1064,9 @@ static irqreturn_t flexcan_irq(int irq, void *dev_id)
 	struct flexcan_priv *priv = netdev_priv(dev);
 	struct flexcan_regs __iomem *regs = priv->regs;
 	irqreturn_t handled = IRQ_NONE;
-	u32 reg_iflag1, reg_esr;
+	u32 reg_tx_iflag, tx_iflag_mask, reg_esr;
+	u32 __iomem *reg_iflag_ptr;
 	enum can_state last_state = priv->can.state;
-
-	reg_iflag1 = flexcan_read(&regs->iflag1);
 
 	/* reception interrupt */
 	if (priv->devtype_data->quirks & FLEXCAN_QUIRK_USE_OFF_TIMESTAMP) {
@@ -1070,6 +1081,9 @@ static irqreturn_t flexcan_irq(int irq, void *dev_id)
 				break;
 		}
 	} else {
+		u32 reg_iflag1;
+
+		reg_iflag1 = flexcan_read(&regs->iflag1);
 		if (reg_iflag1 & FLEXCAN_IFLAG_RX_FIFO_AVAILABLE) {
 			handled = IRQ_HANDLED;
 			can_rx_offload_irq_offload_fifo(&priv->offload);
@@ -1084,8 +1098,18 @@ static irqreturn_t flexcan_irq(int irq, void *dev_id)
 		}
 	}
 
+	if (priv->tx_mb_idx >= FLEXCAN_IFLAG1_MB_NUM) {
+		reg_tx_iflag = flexcan_read(&regs->iflag2);
+		tx_iflag_mask = FLEXCAN_IFLAG2_MB(priv->tx_mb_idx);
+		reg_iflag_ptr = &regs->iflag2;
+	} else {
+		reg_tx_iflag = flexcan_read(&regs->iflag1);
+		tx_iflag_mask = FLEXCAN_IFLAG1_MB(priv->tx_mb_idx);
+		reg_iflag_ptr = &regs->iflag1;
+	}
+
 	/* transmission complete interrupt */
-	if (reg_iflag1 & FLEXCAN_IFLAG_MB(priv->tx_mb_idx)) {
+	if (reg_tx_iflag & tx_iflag_mask) {
 		handled = IRQ_HANDLED;
 		stats->tx_bytes += can_get_echo_skb(dev, 0);
 		stats->tx_packets++;
@@ -1094,7 +1118,7 @@ static irqreturn_t flexcan_irq(int irq, void *dev_id)
 		/* after sending a RTR frame MB is in RX mode */
 		flexcan_mb_write(priv, priv->tx_mb_idx, FLEXCAN_MB_CTRL,
 					FLEXCAN_MB_CODE_TX_INACTIVE);
-		flexcan_write(FLEXCAN_IFLAG_MB(priv->tx_mb_idx), &regs->iflag1);
+		flexcan_write(tx_iflag_mask, reg_iflag_ptr);
 		netif_wake_queue(dev);
 	}
 
@@ -1278,15 +1302,12 @@ static int flexcan_chip_start(struct net_device *dev)
 	reg_mcr &= ~FLEXCAN_MCR_MAXMB(0xff);
 	reg_mcr |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT | FLEXCAN_MCR_SUPV |
 		FLEXCAN_MCR_WRN_EN | FLEXCAN_MCR_SRX_DIS | FLEXCAN_MCR_IRMQ |
-		FLEXCAN_MCR_IDAM_C;
+		FLEXCAN_MCR_IDAM_C | FLEXCAN_MCR_MAXMB(priv->tx_mb_idx);
 
-	if (priv->devtype_data->quirks & FLEXCAN_QUIRK_USE_OFF_TIMESTAMP) {
+	if (priv->devtype_data->quirks & FLEXCAN_QUIRK_USE_OFF_TIMESTAMP)
 		reg_mcr &= ~FLEXCAN_MCR_FEN;
-		reg_mcr |= FLEXCAN_MCR_MAXMB(priv->offload.mb_last);
-	} else {
-		reg_mcr |= FLEXCAN_MCR_FEN |
-			FLEXCAN_MCR_MAXMB(priv->tx_mb_idx);
-	}
+	else
+		reg_mcr |= FLEXCAN_MCR_FEN;
 
 	/* enable self wakeup */
 	reg_mcr |= FLEXCAN_MCR_SLF_WAK;
@@ -1363,16 +1384,17 @@ static int flexcan_chip_start(struct net_device *dev)
 		priv->mb_num = FLEXCAN_MB_NUM;
 	}
 
-	/* clear and invalidate all mailboxes first */
-	for (i = priv->tx_mb_idx; i < priv->mb_num ; i++) {
-		flexcan_mb_write(priv, i, FLEXCAN_MB_CTRL,
-					FLEXCAN_MB_CODE_RX_INACTIVE);
-	}
-
 	if (priv->devtype_data->quirks & FLEXCAN_QUIRK_USE_OFF_TIMESTAMP) {
-		for (i = priv->offload.mb_first; i <= priv->offload.mb_last; i++)
+		for (i = priv->offload.mb_first; i <= priv->offload.mb_last; i++) {
 			flexcan_mb_write(priv, i, FLEXCAN_MB_CTRL,
-						FLEXCAN_MB_CODE_RX_EMPTY);
+				       FLEXCAN_MB_CODE_RX_EMPTY);
+		}
+	} else {
+		/* clear and invalidate unused mailboxes first */
+		for (i = priv->tx_mb_reserved_idx; i < priv->mb_num ; i++) {
+			flexcan_mb_write(priv, i, FLEXCAN_MB_CTRL,
+				       FLEXCAN_MB_CODE_RX_INACTIVE);
+		}
 	}
 
 	/* Errata ERR005829: mark first TX mailbox as INACTIVE */
@@ -1392,7 +1414,7 @@ static int flexcan_chip_start(struct net_device *dev)
 		flexcan_write(0x0, &regs->rxfgmask);
 
 	/* clear acceptance filters */
-	for (i = priv->tx_mb_idx; i < priv->mb_num ; i++)
+	for (i = 0; i < priv->mb_num ; i++)
 		flexcan_write(0, &regs->rximr[i]);
 
 	/* On Vybrid, disable memory error detection interrupts
@@ -1917,8 +1939,8 @@ static int flexcan_probe(struct platform_device *pdev)
 			priv->tx_mb_reserved_idx = FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP_FD;
 			priv->tx_mb_idx = FLEXCAN_TX_MB_OFF_TIMESTAMP_FD;
 		} else {
-			priv->tx_mb_reserved_idx = FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP;
-			priv->tx_mb_idx = FLEXCAN_TX_MB_OFF_TIMESTAMP;
+			priv->tx_mb_reserved_idx = FLEXCAN_TX_MB_RESERVED_OFF_TIMESTAMP; 
+			priv->tx_mb_idx = FLEXCAN_TX_MB;
 		}
 	} else {
 		if (priv->devtype_data->quirks & FLEXCAN_QUIRK_TIMESTAMP_SUPPORT_FD) {
@@ -1928,12 +1950,17 @@ static int flexcan_probe(struct platform_device *pdev)
 		}
 
 		priv->tx_mb_reserved_idx = FLEXCAN_TX_MB_RESERVED_OFF_FIFO;
-		priv->tx_mb_idx = FLEXCAN_TX_MB_OFF_FIFO;
+		priv->tx_mb_idx = FLEXCAN_TX_MB;
 	}
 
-	priv->reg_imask1_default = FLEXCAN_IFLAG_MB(priv->tx_mb_idx);
-	priv->reg_imask2_default = 0;
-
+	if (priv->tx_mb_idx >= FLEXCAN_IFLAG1_MB_NUM) {
+		priv->reg_imask1_default = 0;
+		priv->reg_imask2_default = FLEXCAN_IFLAG2_MB(priv->tx_mb_idx);
+	} else {
+		priv->reg_imask1_default = FLEXCAN_IFLAG1_MB(priv->tx_mb_idx);
+		priv->reg_imask2_default = 0;
+	}
+	
 	priv->offload.mailbox_read = flexcan_mailbox_read;
 
 	if (priv->devtype_data->quirks & FLEXCAN_QUIRK_USE_OFF_TIMESTAMP) {
