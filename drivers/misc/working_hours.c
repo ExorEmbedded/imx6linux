@@ -38,7 +38,7 @@
 #define POLLING_INTERVAL        60000
 
 #define WORKINGHOURS_DRV_NAME   "working_hours"
-#define DRIVER_VERSION          "1.0"
+#define DRIVER_VERSION          "1.1"
 
 #define SYSMINS_OFF             0x02
 #define BLIGHTMINS_OFF          0x03
@@ -61,8 +61,6 @@ struct hrs_data
     // Backlight related stuff
     bool                     has_blight;
     bool                     bl_enabled;
-    // I2C rtc-nvram accessor
-    struct nvmem_device *    rtcnvram_device;
     // Mins counters into I2C rtc-nvram
     u32                      sys_mins;
     u32                      blight_mins;
@@ -79,9 +77,9 @@ static void UpdateCounters(struct hrs_data* data)
 
     /* *** Update sys counters *** */
     data->sys_mins++;
-    if(data->sys_mins >= 1440) // Update hours counter every 24h and save it to I2C SEEPROM
+    if(data->sys_mins >= 60) // Update hours counter every 1h and save it to I2C SEEPROM
     {
-        data->sys_hours += 24;
+        data->sys_hours += 1;
         data->sys_mins = 0;
 
         tmphours = data->sys_hours;
@@ -101,25 +99,14 @@ static void UpdateCounters(struct hrs_data* data)
         }
     }
 
-    if((data->sys_mins % 8) == 0) // Update mins counter every 8 minutes and store it to rtc-nvram
-    {
-        tmp = (u8)(((data->sys_mins)>>3)& 0xff);
-	r1 = nvmem_device_write(data->rtcnvram_device, SYSMINS_OFF, sizeof(u8), (void*)&tmp);
-        if(r1 != sizeof(u8))
-        {
-            msleep(100);
-            nvmem_device_write(data->rtcnvram_device, SYSMINS_OFF, sizeof(u8), (void*)&tmp);
-        }
-    }
-
     /* *** Update blight counters *** */
     if(data->bl_enabled == false)
         return;
 
     data->blight_mins++;
-    if(data->blight_mins >= 1440) // Update hours counter every 24h and save it to I2C SEEPROM
+    if(data->blight_mins >= 60) // Update hours counter every 1h and save it to I2C SEEPROM
     {
-        data->blight_hours += 24;
+        data->blight_hours += 1;
         data->blight_mins = 0;
 
         tmphours = data->blight_hours;
@@ -136,17 +123,6 @@ static void UpdateCounters(struct hrs_data* data)
                 break;
             }
             msleep(100);
-        }
-    }
-
-    if((data->blight_mins % 8) == 0) // Update mins counter every 8 minutes and store it to rtc-nvram
-    {
-        tmp = (u8)(((data->blight_mins)>>3)& 0xff);
-	r1 = nvmem_device_write(data->rtcnvram_device, BLIGHTMINS_OFF, sizeof(u8), (void*)&tmp);
-        if(r1 != sizeof(u8))
-        {
-            msleep(100);
-	    nvmem_device_write(data->rtcnvram_device, BLIGHTMINS_OFF, sizeof(u8), (void*)&tmp);
         }
     }
 }
@@ -212,52 +188,6 @@ static int get_hours_from_seeprom(struct hrs_data* data)
 }
 
 /*
-* Static helper function to get the mins counters from I2C rtc NVRAM
-*/
-static int get_mins_from_rtcnvram(struct hrs_data* data)
-{
-    int i;
-    int r1;
-    u8 tmpmins;
-
-    data->sys_mins = 0;
-    data->blight_mins = 0;
-
-    mutex_lock(&data->lock);
-
-    /* Read sys_mins counter from NVRAM, with retry */
-    tmpmins = 0;
-    for (i = 0; i < 5; i++)
-    {
-	r1 = nvmem_device_read(data->rtcnvram_device, SYSMINS_OFF, sizeof(u8), (void*)&tmpmins);
-
-        if(r1 == sizeof(u8))
-        {
-            break;
-        }
-        msleep(200);
-    }
-    data->sys_mins = ((u32)tmpmins) << 3;
-
-    /* Read blight_mins counter from NVRAM, with retry */
-    tmpmins = 0;
-    for (i = 0; i < 5; i++)
-    {
-	r1 = nvmem_device_read(data->rtcnvram_device, BLIGHTMINS_OFF, sizeof(u8), (void*)&tmpmins);
-
-        if(r1 == sizeof(u8))
-        {
-            break;
-        }
-        msleep(200);
-    }
-    data->blight_mins = ((u32)tmpmins) << 3;
-    mutex_unlock(&data->lock);
-
-    return 0;
-}
-
-/*
  * static helper function for parsing the DTB tree
  */
 #ifdef CONFIG_OF
@@ -274,15 +204,6 @@ static int hrs_parse_dt(struct device *dev, struct hrs_data *data)
     }
     data->seeprom_device = nvmem;
 
-    /* Parse the DT to find the RTCNVRAM bindings*/
-    nvmem = nvmem_device_get(dev, "rtcnvram");
-    if (IS_ERR(nvmem))
-    {
-      dev_err(dev, "nvmem_device_get:rtcnvram err=%ld\n", PTR_ERR(nvmem));
-      return PTR_ERR(nvmem);
-    }
-    data->rtcnvram_device = nvmem;
-    
     /* parse the DT to get the backlight references */
 	if (of_get_property(dev->of_node, "has-blight", NULL))
     {
@@ -366,13 +287,6 @@ static ssize_t reset_blight_hours(struct device *dev, struct device_attribute *a
         nvmem_device_write(data->seeprom_device, BACKLIGHT_HOUR_COUNTER_OFFSET_I2C, sizeof(zerobuf), (void*)zerobuf);
     }
 
-    /* reset counter in NVRAM */
-    r1 = nvmem_device_write(data->rtcnvram_device, BLIGHTMINS_OFF, sizeof(u8), (void*)zerobuf);
-    if(r1 != sizeof(u8))
-    {
-        msleep(200);
-        nvmem_device_write(data->rtcnvram_device, BLIGHTMINS_OFF, sizeof(u8), (void*)zerobuf);
-    }
     mutex_unlock(&data->lock);
     return count;
 }
@@ -415,13 +329,6 @@ static ssize_t reset_sys_hours(struct device *dev, struct device_attribute *attr
         nvmem_device_write(data->seeprom_device, SYSTEM_HOUR_COUNTER_OFFSET_I2C, sizeof(zerobuf), (void*)zerobuf);
     }
 
-    /* reset counter in NVRAM */
-    r1 = nvmem_device_write(data->rtcnvram_device, SYSMINS_OFF, sizeof(u8), (void*)zerobuf);
-    if(r1 != sizeof(u8))
-    {
-        msleep(200);
-        nvmem_device_write(data->rtcnvram_device, SYSMINS_OFF, sizeof(u8), (void*)zerobuf);
-    }
     mutex_unlock(&data->lock);
     return count;
 }
@@ -470,7 +377,8 @@ static int workinghours_probe(struct platform_device *pdev)
     mutex_init(&data->lock);
 
     get_hours_from_seeprom(data);
-    get_mins_from_rtcnvram(data);
+    data->sys_mins = 0;
+    data->blight_mins = 0;
 
     data->auto_update_interval = POLLING_INTERVAL;
     init_completion(&data->auto_update_stop);
@@ -491,7 +399,6 @@ static int workinghours_remove(struct platform_device *pdev)
     wait_for_completion(&data->auto_update_stop);
     sysfs_remove_group(&pdev->dev.kobj, &working_hours_attr_group);
     nvmem_device_put(data->seeprom_device);
-    nvmem_device_put(data->rtcnvram_device);
     kfree(data);
     return 0;
 }
