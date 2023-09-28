@@ -362,6 +362,11 @@
         reg = <0x68>;
     };
 
+    mcp7940:mcp7940@6f {
+        compatible = "microchip,mcp7940x";
+        reg = <0x6f>;
+    };
+	
     dsi_lvds_bridge:bridge@2c {
             compatible = "ti,sn65dsi84";
             reg = <0x2c>;

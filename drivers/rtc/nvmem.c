@@ -16,15 +16,11 @@
  * Deprecated ABI compatibility, this should be removed at some point
  */
 
-static const char nvram_warning[] = "Deprecated ABI, please use nvmem";
-
 static ssize_t
 rtc_nvram_read(struct file *filp, struct kobject *kobj,
 	       struct bin_attribute *attr,
 	       char *buf, loff_t off, size_t count)
 {
-	dev_warn_once(kobj_to_dev(kobj), nvram_warning);
-
 	return nvmem_device_read(attr->private, off, count, buf);
 }
 
@@ -33,8 +29,6 @@ rtc_nvram_write(struct file *filp, struct kobject *kobj,
 		struct bin_attribute *attr,
 		char *buf, loff_t off, size_t count)
 {
-	dev_warn_once(kobj_to_dev(kobj), nvram_warning);
-
 	return nvmem_device_write(attr->private, off, count, buf);
 }
 
