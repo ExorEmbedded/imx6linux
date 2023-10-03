@@ -162,16 +162,16 @@
 };
 
 &ecspi1 {
-    fsl,spi-num-chipselects = <2>;
+    fsl,spi-num-chipselects = <3>;
     cs-gpios = <&gpio4 27 0>,  /* CS0 */
-               <&gpio5  9 0>; /* CS1 */
+               <&gpio5  9 0>, /* CS1 */
+               <&gpio4  25 0>; /* CS2 */
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_ecspi1_xs07>;
     status = "okay";
 	
 	/delete-node/ spi0@0;
 	/delete-node/ spi0@1;
-	/delete-node/ mcp3204@2;
 	/delete-node/ at25@3;
 	/delete-node/ n25q256a@4;
     
@@ -400,6 +400,7 @@
 				MX8MM_IOMUXC_ECSPI1_MISO_ECSPI1_MISO    0x11
 				MX8MM_IOMUXC_ECSPI1_SS0_GPIO5_IO9       0x11
 				MX8MM_IOMUXC_SAI2_MCLK_GPIO4_IO27       0x11
+				MX8MM_IOMUXC_SAI2_TXC_GPIO4_IO25        0x11
 			>;
 		};
 		
