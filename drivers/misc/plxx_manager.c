@@ -233,7 +233,7 @@ static int plcm10_init(struct plxx_data *data,bool* wifiport)
   msg.buf = buf;
 
   buf[0] = PLCMxx_OUTREG;
-  buf[1] = 0xFF - (b(PLCM10_LED_POL) | b(PLCM10_LED1) | b(PLCM10_LED2) | b(PLCM10_XO1) | b(PLCM10_XO2));
+  buf[1] = 0xFF - (b(PLCM10_LED_POL) | b(PLCM10_LED1) | b(PLCM10_LED2));
   ret = i2c_transfer(adapter, &msg, 1);
   if(ret < 0)
   {
