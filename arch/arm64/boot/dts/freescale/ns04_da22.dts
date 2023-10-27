@@ -79,7 +79,12 @@
 	  sel-gpio = <&gpio3 5 0>;
 	  index = <3>;
 	  status = "okay";
-	};	
+	};
+	
+	extcon_usb: extcon_iddig {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
 	
 	i2cmux {
 		compatible = "i2c-mux-gpio";
@@ -296,7 +301,15 @@
 		fsl,usbmisc = <&usbmisc1 0>;
 		power-domains = <&usb_otg1_pd>;
 		
-		dr_mode = "host";
+		dr_mode = "otg";
+		disable-over-current;
+		srp-disable;
+		hnp-disable;
+		adp-disable;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb1>;
+		extcon = <&extcon_usb>, <&extcon_usb>;
+
 		vbus-supply = <&reg_usb1_otg_vbus>;
 		picophy,pre-emp-curr-control = <3>;
 		picophy,dc-vol-level-adjust = <7>;
@@ -588,7 +601,13 @@
 				MX8MM_IOMUXC_GPIO1_IO05_GPIO1_IO5       0x1c4 /* PG_D          */
 			>;
 		};
-
+		
+		pinctrl_usb1: usb1grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10		0x140 /* USB1 OTG ID GPIO   */
+			>;
+		};
+		
 		pinctrl_ecspi1: ecspi1grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_ECSPI1_SCLK_ECSPI1_SCLK    0x11
