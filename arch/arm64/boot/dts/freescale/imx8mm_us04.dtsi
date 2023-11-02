@@ -158,6 +158,11 @@
 	
 };
 
+&cpu_pd_wait {
+	/delete-property/ compatible;
+	/*arm,psci-suspend-param = <0x0>;*/
+};
+
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog>;
