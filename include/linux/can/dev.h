@@ -200,6 +200,11 @@ struct net_device *alloc_candev_mqs(int sizeof_priv, unsigned int echo_skb_max,
 	alloc_candev_mqs(sizeof_priv, echo_skb_max, count, count)
 void free_candev(struct net_device *dev);
 
+struct net_device *alloc_candev_mqs_alias(int sizeof_priv, unsigned int echo_skb_max,
+				    unsigned int txqs, unsigned int rxqs, const char* alias);
+#define alloc_candev_alias(sizeof_priv, echo_skb_max, alias) \
+	alloc_candev_mqs_alias(sizeof_priv, echo_skb_max, 1, 1, alias)
+
 /* a candev safe wrapper around netdev_priv */
 struct can_priv *safe_candev_priv(struct net_device *dev);
 
