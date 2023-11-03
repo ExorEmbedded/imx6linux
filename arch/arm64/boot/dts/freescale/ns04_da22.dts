@@ -21,6 +21,9 @@
 	aliases {
 		serial0 = &uart1;
 		serial1 = &uart2;
+		can0 = &can0;
+		can1 = &can1;
+		can2 = &can2;
 	};
 
 	beeper {
