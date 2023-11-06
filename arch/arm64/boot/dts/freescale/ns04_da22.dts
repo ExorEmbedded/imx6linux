@@ -493,6 +493,9 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart2>;
 	fsl,uart-has-rtscts;
+	is-plugin-module;
+	plugin1 = <&plxx0>;
+	plugin2 = <&plxx1>;
 	status = "okay";
 	/delete-property/dmas;
 	/delete-property/dma-names;
