@@ -57,6 +57,7 @@
 			&gpio4 12 0
 			&gpio4 11 0
 			&gpio4 10 0
+			&gpio4 20 0
 		>;
 
 		/* Input */
@@ -76,36 +77,42 @@
 			0x0002006c  /* KEY_DOWN */
 			0x0003006a	/* KEY_RIGHT */
 			0x00040041	/* KEY_F7 */
+			0x000500ba	/* KEY_F16 */
 
 			0x0100003b	/* KEY_F1 */
 			0x0101003c	/* KEY_F2 */
 			0x0102003d  /* KEY_F3 */
 			0x0103003e	/* KEY_F4 */
 			0x0104003f	/* KEY_F5 */
+			0x010500bb	/* KEY_F17 */
 
 			0x02000040	/* KEY_F6 */
 			0x020100b8	/* KEY_F14 */
 			0x02020058  /* KEY_F12 */
 			0x020300b9	/* KEY_F15 */
 			0x020400b7	/* KEY_F13 */
+			0x020500bc	/* KEY_F18 */
 
 			0x03000057	/* KEY_F11 */
 			0x03010044	/* KEY_F10 */
 			0x03020043  /* KEY_F9 */
 			0x03030042	/* KEY_F8 */
 			0x03040060  /* KEY_KPENTER */	
+			0x030500bd	/* KEY_F19 */
 
 			0x04000052	/* KEY_KP0 */
 			0x0401004f	/* KEY_KP1 */
 			0x04020050  /* KEY_KP2 */
 			0x04030051	/* KEY_KP3 */
 			0x0404004b	/* KEY_KP4 */
+			0x040500be	/* KEY_F20 */
 
 			0x0500004c	/* KEY_KP5 */
 			0x0501004d	/* KEY_KP6 */
 			0x05020047  /* KEY_KP7 */
 			0x05030048	/* KEY_KP8 */
 			0x05040049	/* KEY_KP9 */
+			0x050500bf	/* KEY_F21 */
 		>;
 	};
 	
@@ -425,7 +432,7 @@
 				MX8MM_IOMUXC_SAI1_TXD0_GPIO4_IO12       0x184   /* COL2 */
 				MX8MM_IOMUXC_SAI1_TXC_GPIO4_IO11        0x184   /* COL3 */
 				MX8MM_IOMUXC_SAI1_TXFS_GPIO4_IO10       0x184   /* COL4 */
-				MX8MM_IOMUXC_SAI1_MCLK_GPIO4_IO20       0x184   /* COL5 (not used) */
+				MX8MM_IOMUXC_SAI1_MCLK_GPIO4_IO20       0x184   /* COL5 */
 				
 				MX8MM_IOMUXC_GPIO1_IO07_GPIO1_IO7       0x184   /* row0 */
 				MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8       0x184   /* row1 */
