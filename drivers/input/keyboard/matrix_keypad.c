@@ -194,6 +194,8 @@ static void matrix_keypad_scan(struct work_struct *work)
 			input_report_key(input_dev,
 					 keycodes[code],
 					 new_state[col] & (1 << row));
+			
+			printk("scancode=0x%x keycode=0x%x\n",code,keycodes[code]);
 
 			if(new_state[col] & (1 << row))
 				keypad->raw_keymap = keypad->raw_keymap | (1 << ((col*pdata->num_row_gpios)+row));
@@ -618,7 +620,11 @@ static int matrix_keypad_getkeycode(struct input_dev *input_dev,
 	{
 		for(c=0; c<pdata->num_col_gpios && !stop; c++)
 		{
+#ifdef CONFIG_KEYBOARD_MATRIX_SHUTDOWN
 			if(keycodes[MATRIX_SCAN_CODE(r, c, row_shift)] == scancode)
+#else
+			if(MATRIX_SCAN_CODE(r, c, row_shift) == scancode)
+#endif
 			{
 				ke->keycode = keycodes[MATRIX_SCAN_CODE(r, c, row_shift)];
 				ke->len = sizeof(scancode);
@@ -651,10 +657,14 @@ static int matrix_keypad_setkeycode(struct input_dev *input_dev,
 	{
 		for(c=0; c<pdata->num_col_gpios && !stop; c++)
 		{
+#ifdef CONFIG_KEYBOARD_MATRIX_SHUTDOWN
 			if(keycodes[MATRIX_SCAN_CODE(r, c, row_shift)] == scancode)
+#else
+			if(MATRIX_SCAN_CODE(r, c, row_shift) == scancode)
+#endif
 			{
-				dev_info(&input_dev->dev, "Change KeyCode from %X to %X \n", \
-						 keycodes[MATRIX_SCAN_CODE(r, c, row_shift)], ke->keycode );
+				dev_info(&input_dev->dev, "Change ScanCode=0x%x KeyCode from 0x%X to 0x%X \n", \
+						 MATRIX_SCAN_CODE(r, c, row_shift), keycodes[MATRIX_SCAN_CODE(r, c, row_shift)], ke->keycode );
 
 				*old_keycode = keycodes[MATRIX_SCAN_CODE(r, c, row_shift)];
 				keycodes[MATRIX_SCAN_CODE(r, c, row_shift)] =  ke->keycode;
