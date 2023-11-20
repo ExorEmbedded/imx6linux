@@ -109,8 +109,11 @@
  *													26.05.2023	Modified display code #70: DISPHT1560EI011 (HT1560EI01A) for eX715MG (1920x1080)
  *                                      reduced min duty to reach zero-dimming on imx8 for eX715MG
  *1.51			SS							15.06.2023	Modified display code #85: MAX duty set to 100% for 700cd/m2 as old jSMART10, pcn describes wrong 400cd/m2 spec
+ *1.52			SS							20.11.2023	Added display code #87: Yes YTCA10WLBC-07-100C-V2 eSMART02-10" 
+ *																			Added display code #88: Yes YTC700TLBF-13-200C-V1 eSMART02-7", only datasheet spec no real test 
+ *																			Added display code #89: Yes YTC500RLBH-42-200C eSMART02-5", only datasheet spec no real test 
  *
- * NEXT AVAILABLE DISPLAY CODE: 87
+ * NEXT AVAILABLE DISPLAY CODE: 90
  */
  
 #ifndef DISPLAYCONFIG_H
@@ -1493,7 +1496,85 @@ static struct t_DisplayParams displayconfig[] = {
         .brightness_min = 0x0300,       //min duty 0,03% on US04 (no gamma correction)
         .brightness_max = 100,          //max duty 100% on US04 
 #endif
-    },     
+    },  
+    /* 87: Yes YTCA10WLBC-07-100C-V2(10.1", 1280x800) for eSMART02  */
+    {
+        .dispid    = 87,
+        .rezx      = 1280, 
+        .rezy      = 800, 
+        .bpp       = 24,
+        
+        .pclk_freq = 62600,         //US04 supporta un numero limitato di freq (fare sempre check con tabella PLL)
+        .pclk_inv  = 1,							//inverted clock polarity (compatibility with IMX.6 bug)
+        
+        .hs_fp     = 12,            
+        .hs_bp     = 86,            
+        .hs_w      = 2,             
+        .hs_inv    = 0,
+        
+        .vs_fp     = 15,             
+        .vs_bp     = 3,            
+        .vs_w      = 20,             
+        .vs_inv    = 0,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 5000,				//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.
+        .brightness_min = 0x6300,		 //min duty cycle 0.99% 
+        .brightness_max = 100,
+    },   
+    /* 88: YES YTC700TLBF-13-200C-V1 for eSMART02-7" 1024x600*/
+    {
+        .dispid    = 88,
+        .rezx      = 1024, 
+        .rezy      = 600, 
+        .bpp       = 24,
+        
+        .pclk_freq = 51000, 
+        .pclk_inv  = 1,  // inverted clock polarity due to IMX.6 bug
+        
+        .hs_fp     = 10, 
+        .hs_bp     = 320, 
+        .hs_w      = 10, 
+        .hs_inv    = 1,
+        
+        .vs_fp     = 10, 
+        .vs_bp     = 35, 
+        .vs_w      = 10, 
+        .vs_inv    = 1,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 5000,				//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.
+        .brightness_min = 0x6300,		 //min duty cycle 0.99% 
+        .brightness_max = 100,
+    },   
+    /* 89: YES YTC500RLBH-42-200C for eSMART02-5" 800x480 */
+    {
+      .dispid    = 89,
+      .rezx      = 800, 
+      .rezy      = 480, 
+      .bpp       = 24,
+      
+      .pclk_freq = 27000, 
+      .pclk_inv  = 0,
+      
+      .hs_fp     = 48, 
+      .hs_bp     = 48, 
+      .hs_w      = 8, 
+      .hs_inv    = 1,
+      
+      .vs_fp     = 12, 
+      .vs_bp     = 12, 
+      .vs_w      = 8, 
+      .vs_inv    = 1,
+      
+      .blank_inv      = 0,
+      
+      .pwmfreq        = 6500,			//27.09.2022 keyboard led dimming driven by TPS61165 (avoid EasyScale min freq)
+      .brightness_min = 0x6300,		 //min duty cycle 0.99%
+      .brightness_max = 60,
+    },   
     /* END OF LIST */
     {
       .dispid    = NODISPLAY,
