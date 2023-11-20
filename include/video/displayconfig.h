@@ -112,8 +112,9 @@
  *1.52			SS							20.11.2023	Added display code #87: Yes YTCA10WLBC-07-100C-V2 eSMART02-10" 
  *																			Added display code #88: Yes YTC700TLBF-13-200C-V1 eSMART02-7", only datasheet spec no real test 
  *																			Added display code #89: Yes YTC500RLBH-42-200C eSMART02-5", only datasheet spec no real test 
+ *																			Added display code #90: Innolux G156HCE-LN1 eSMART02-15", only datasheet spec no real test
  *
- * NEXT AVAILABLE DISPLAY CODE: 90
+ * NEXT AVAILABLE DISPLAY CODE: 91
  */
  
 #ifndef DISPLAYCONFIG_H
@@ -1575,6 +1576,32 @@ static struct t_DisplayParams displayconfig[] = {
       .brightness_min = 0x6300,		 //min duty cycle 0.99%
       .brightness_max = 60,
     },   
+    /* 90: Innolux G156HCE-LN1 DUAL LVDS 24 bit 1920x1080 eSMART02-15"*/
+    {
+        .dispid    = 90,
+        .rezx      = 1920, 
+        .rezy      = 1080, 
+        .bpp       = 24,
+        
+        .pclk_freq = 70930,      // DUAL LVDS dispaly: this is the freq. of one single channel
+        .pclk_inv  = 1,			 		//27.03.2017 inverted clock polarity due to IMX.6 bug
+        
+        .hs_fp     = 15, 
+        .hs_bp     = 90, 
+        .hs_w      = 1, 
+        .hs_inv    = 0,
+        
+        .vs_fp     = 10, 
+        .vs_bp     = 20, 
+        .vs_w      = 1, 
+        .vs_inv    = 0,
+        
+        .blank_inv      = 0,
+        
+        .pwmfreq        = 200,
+        .brightness_min = 5,		
+        .brightness_max = 100,
+    },                     
     /* END OF LIST */
     {
       .dispid    = NODISPLAY,
