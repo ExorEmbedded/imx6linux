@@ -195,7 +195,7 @@ static void matrix_keypad_scan(struct work_struct *work)
 					 keycodes[code],
 					 new_state[col] & (1 << row));
 			
-			printk("scancode=0x%x keycode=0x%x\n",code,keycodes[code]);
+			//printk("scancode=0x%x keycode=0x%x\n",code,keycodes[code]);
 
 			if(new_state[col] & (1 << row))
 				keypad->raw_keymap = keypad->raw_keymap | (1 << ((col*pdata->num_row_gpios)+row));
