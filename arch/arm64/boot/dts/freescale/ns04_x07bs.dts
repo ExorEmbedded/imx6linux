@@ -56,6 +56,11 @@
             gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
             default-state = "off";
         };
+        ld2_errled@15 {
+            label = "ld2_errled";
+            gpios = <&pca9534 1 GPIO_ACTIVE_LOW>;
+            default-state = "off";
+        };
 };
 
 &aips4 {
@@ -98,6 +103,13 @@
 		compatible = "atmel,24c02";
 		reg = <0x52>;
 	};	
+
+    pca9534: pca9534@3c {
+        compatible = "ti,pca9534";
+        gpio-controller;
+        #gpio-cells = <2>;
+        reg = <0x3c>;
+    };
 };
 
 &fec1 {
