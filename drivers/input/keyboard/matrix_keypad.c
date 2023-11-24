@@ -663,8 +663,8 @@ static int matrix_keypad_setkeycode(struct input_dev *input_dev,
 			if(MATRIX_SCAN_CODE(r, c, row_shift) == scancode)
 #endif
 			{
-				dev_info(&input_dev->dev, "Change ScanCode=0x%x KeyCode from 0x%X to 0x%X \n", \
-						 MATRIX_SCAN_CODE(r, c, row_shift), keycodes[MATRIX_SCAN_CODE(r, c, row_shift)], ke->keycode );
+//				dev_info(&input_dev->dev, "Change ScanCode=0x%x KeyCode from 0x%X to 0x%X \n", \
+//						 MATRIX_SCAN_CODE(r, c, row_shift), keycodes[MATRIX_SCAN_CODE(r, c, row_shift)], ke->keycode );
 
 				*old_keycode = keycodes[MATRIX_SCAN_CODE(r, c, row_shift)];
 				keycodes[MATRIX_SCAN_CODE(r, c, row_shift)] =  ke->keycode;
@@ -674,15 +674,15 @@ static int matrix_keypad_setkeycode(struct input_dev *input_dev,
 #ifdef CONFIG_KEYBOARD_MATRIX_SHUTDOWN
 				if(pdata->shutdown_keycode1 == *old_keycode)
 				{
-					dev_info(&input_dev->dev, "Change shutdown_keycode1 from %X to %x", \
-							 pdata->shutdown_keycode1, ke->keycode);
+//					dev_info(&input_dev->dev, "Change shutdown_keycode1 from %X to %x", \
+//							 pdata->shutdown_keycode1, ke->keycode);
 					pdata->shutdown_keycode1 = ke->keycode;
 				}
 
 				if(pdata->shutdown_keycode2 == *old_keycode)
 				{
-					dev_info(&input_dev->dev, "Change shutdown_keycode1 from %X to %x", \
-							 pdata->shutdown_keycode2, ke->keycode);
+//					dev_info(&input_dev->dev, "Change shutdown_keycode1 from %X to %x", \
+//							 pdata->shutdown_keycode2, ke->keycode);
 					pdata->shutdown_keycode2 = ke->keycode;
 				}
 #endif
