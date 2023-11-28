@@ -263,6 +263,8 @@
 #define ERRCONTROL1		25
 #define ERRCONTROL0		26
 
+#define MIPI_BITCLK_TH (200000l)
+
 #define MIPI_FIFO_TIMEOUT	msecs_to_jiffies(250)
 
 #define MIPI_HFP_PKT_OVERHEAD	6
@@ -903,6 +905,12 @@ static void sec_mipi_dsim_set_main_mode(struct sec_mipi_dsim *dsim)
 #ifdef CONFIG_DRM_TI_SN65DSI83	
 			hfp_wc = 1;
 			hbp_wc = 1;
+
+			if(dsim->bit_clk < MIPI_BITCLK_TH)
+			{
+				hfp_wc = 8;
+				hbp_wc = 8;
+			}
 #endif
 
 	mhporch |= MHPORCH_SET_MAINHFP(hfp_wc) |
@@ -920,6 +928,10 @@ static void sec_mipi_dsim_set_main_mode(struct sec_mipi_dsim *dsim)
 		hsa_wc = dsim->hpar->hsa_wc;
 #ifdef CONFIG_DRM_TI_SN65DSI83	
 	hsa_wc = 1;
+	if(dsim->bit_clk < MIPI_BITCLK_TH)
+	{
+		hsa_wc = 8;
+	}
 #endif	
 	
 	msync |= MSYNC_SET_MAINVSA(vmode->vsync_len) |
@@ -1158,6 +1170,7 @@ struct dsim_pll_pms *sec_mipi_dsim_calc_pmsk(struct sec_mipi_dsim *dsim)
 	fout = dsim->bit_clk;
 	fin  = dsim->pref_clk;
 
+
 	/* TODO: ignore 'k' for PMS calculation,
 	 * only use 'p', 'm' and 's' to generate
 	 * the requested PLL output clock.
@@ -1234,6 +1247,15 @@ struct dsim_pll_pms *sec_mipi_dsim_calc_pmsk(struct sec_mipi_dsim *dsim)
 		devm_kfree(dev, pll_pms);
 		return ERR_PTR(-EINVAL);
 	}
+	
+#ifdef CONFIG_DRM_TI_SN65DSI83	
+	if(dsim->bit_clk == 199200l)
+	{ //Override pms parameters for display id 58 and equivalent 
+		best_p = 2;
+		best_m = 266;
+		best_s = 3;
+	}
+#endif	
 
 	pll_pms->p = best_p;
 	pll_pms->m = best_m;
