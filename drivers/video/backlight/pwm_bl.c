@@ -30,6 +30,7 @@ struct pwm_bl_data {
 	bool            inverted;
 	struct regulator	*power_supply;
 	struct gpio_desc	*enable_gpio;
+	struct gpio_desc	*scale_gpio;
 	unsigned int		scale;
 	bool			legacy;
 	unsigned int		post_pwm_on_delay;
@@ -208,7 +209,17 @@ static int compute_duty_cycle(struct pwm_bl_data *pb, int brightness)
 	pwm_get_state(pb->pwm, &state);
 
 	if (pb->levels)
+	{
 		duty_cycle = pb->levels[brightness];
+		/* scale_gpio handling */
+		if (pb->scale_gpio)
+		{
+			if(brightness > 2)
+				gpiod_direction_output(pb->scale_gpio, 1);
+			else
+				gpiod_direction_output(pb->scale_gpio, 0);
+		}
+	}
 	else
 		duty_cycle = brightness;
 	
@@ -589,6 +600,12 @@ static int pwm_backlight_initial_power_state(const struct pwm_bl_data *pb)
 	 * tells us if we own one of the regulator's use counts and
 	 * right now we do not.
 	 */
+	
+	/*
+	 * Set direction output for scale_gpio, if defined
+	 */
+	if (pb->scale_gpio)
+		gpiod_direction_output(pb->scale_gpio, 1);
 
 	/* Not booted with device tree or no phandle link to the node */
 	if (!node || !node->phandle)
@@ -654,6 +671,13 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 		goto err_alloc;
 	}
 
+	pb->scale_gpio = devm_gpiod_get_optional(&pdev->dev, "scale",
+						  GPIOD_ASIS);
+	if (IS_ERR(pb->scale_gpio)) {
+		ret = PTR_ERR(pb->scale_gpio);
+		goto err_alloc;
+	}
+	
 	pb->power_supply = devm_regulator_get(&pdev->dev, "power");
 	if (IS_ERR(pb->power_supply)) {
 		ret = PTR_ERR(pb->power_supply);
