@@ -112,6 +112,7 @@
     brightness-levels = <0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100>;
     default-brightness-level = <0>;
     enable-gpios = <&gpio5 5 0>;
+    scale-gpios = <&gpio3 20 0>;
     status = "okay";
 };
 
@@ -295,6 +296,7 @@
 			fsl,pins = <
 				MX8MM_IOMUXC_SPDIF_TX_PWM3_OUT            0x1c4
 				MX8MM_IOMUXC_SPDIF_EXT_CLK_GPIO5_IO5      0x1c4
+				MX8MM_IOMUXC_SAI5_RXC_GPIO3_IO20          0x1c4
 			>;
 		};
 
