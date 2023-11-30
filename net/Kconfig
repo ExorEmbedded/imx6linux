@@ -440,6 +440,12 @@ config MAY_USE_DEVLINK
 	  on MAY_USE_DEVLINK to ensure they do not cause link errors when
 	  devlink is a loadable module and the driver using it is built-in.
 
+config NAPI_THREADED
+	bool "NAPI Threaded"
+	default n
+	help
+	  Enable threaded mode for napi subsystem
+
 endif   # if NET
 
 # Used by archs to tell that they support BPF JIT compiler plus which flavour.
