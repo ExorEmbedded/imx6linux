@@ -1,3 +1,5 @@
+#error CVE-2023-4921
+#error CVE-2023-3611
 #error CVE-2023-31436
 /*
  * net/sched/sch_qfq.c         Quick Fair Queueing Plus Scheduler.

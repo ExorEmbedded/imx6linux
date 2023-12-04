@@ -1,3 +1,5 @@
+#error CVE-2023-4208
+#error CVE-2023-3609
 /*
  * net/sched/cls_u32.c	Ugly (or Universal) 32bit key Packet Classifier.
  *
@@ -863,7 +865,6 @@ static struct tc_u_knode *u32_init_knode(struct tcf_proto *tp,
 	new->ifindex = n->ifindex;
 #endif
 	new->fshift = n->fshift;
-	new->res = n->res;
 	new->flags = n->flags;
 	RCU_INIT_POINTER(new->ht_down, n->ht_down);
 
