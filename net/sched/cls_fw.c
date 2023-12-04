@@ -1,3 +1,5 @@
+#error CVE-2023-4207
+#error CVE-2023-3776
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * net/sched/cls_fw.c	Classifier mapping ipchains' fwmark to traffic class.
@@ -266,7 +268,6 @@ static int fw_change(struct net *net, struct sk_buff *in_skb,
 			return -ENOBUFS;
 
 		fnew->id = f->id;
-		fnew->res = f->res;
 		fnew->ifindex = f->ifindex;
 		fnew->tp = f->tp;
 

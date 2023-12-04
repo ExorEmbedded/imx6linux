@@ -1,3 +1,4 @@
+#error CVE-2022-45887
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * TTUSB DEC Driver
@@ -1551,8 +1552,7 @@ static void ttusb_dec_exit_dvb(struct ttusb_dec *dec)
 	dvb_dmx_release(&dec->demux);
 	if (dec->fe) {
 		dvb_unregister_frontend(dec->fe);
-		if (dec->fe->ops.release)
-			dec->fe->ops.release(dec->fe);
+		dvb_frontend_detach(dec->fe);
 	}
 	dvb_unregister_adapter(&dec->adapter);
 }
