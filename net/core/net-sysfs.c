@@ -513,6 +513,8 @@ static ssize_t phys_switch_id_show(struct device *dev,
 static DEVICE_ATTR_RO(phys_switch_id);
 
 #ifdef CONFIG_NAPI_THREADED
+extern int napi_set_threaded(struct napi_struct *n, bool threaded);
+
 static unsigned long *__alloc_thread_bitmap(struct net_device *netdev,
 					    int *bits)
 {
