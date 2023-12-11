@@ -1487,7 +1487,7 @@ static void __dev_close_many(struct list_head *head)
 	list_for_each_entry(dev, head, close_list) {
 		const struct net_device_ops *ops = dev->netdev_ops;
 #ifdef CONFIG_NAPI_THREADED
-		struct napi_struct *n;
+		//struct napi_struct *n;
 #endif
 
 		/*
@@ -1501,8 +1501,8 @@ static void __dev_close_many(struct list_head *head)
 			ops->ndo_stop(dev);
 
 #ifdef CONFIG_NAPI_THREADED
-		list_for_each_entry(n, &dev->napi_list, dev_list)
-			napi_thread_stop(n);
+		//list_for_each_entry(n, &dev->napi_list, dev_list)
+		//	napi_thread_stop(n);
 #endif
 
 		dev->flags &= ~IFF_UP;
@@ -5614,8 +5614,10 @@ int napi_set_threaded(struct napi_struct *n, bool threaded)
 				goto out;
 		}
 		set_bit(NAPI_STATE_THREADED, &n->state);
-	} else {
-		clear_bit(NAPI_STATE_THREADED, &n->state);
+                clear_bit(NAPI_STATE_NPSVC, &n->state);
+                clear_bit(NAPI_STATE_SCHED, &n->state);
+        } else {
+            clear_bit(NAPI_STATE_THREADED, &n->state);
 	}
 
 out:
@@ -5660,10 +5662,13 @@ void napi_disable(struct napi_struct *n)
 
 	hrtimer_cancel(&n->timer);
 #ifdef CONFIG_NAPI_THREADED
-	napi_thread_stop(n);
+	//napi_thread_stop(n);
 #endif
 
 	clear_bit(NAPI_STATE_DISABLE, &n->state);
+#ifdef CONFIG_NAPI_THREADED
+        clear_bit(NAPI_STATE_THREADED, &n->state);
+#endif
 }
 EXPORT_SYMBOL(napi_disable);
 
@@ -5828,7 +5833,7 @@ static int napi_thread_wait(struct napi_struct *napi)
 {
 	set_current_state(TASK_INTERRUPTIBLE);
 
-	while (!kthread_should_stop() && !napi_disable_pending(napi)) {
+	while (!kthread_should_stop()) {
 		if (test_bit(NAPI_STATE_SCHED, &napi->state)) {
 																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										WARN_ON(!list_empty(&napi->poll_list));
 			__set_current_state(TASK_RUNNING);

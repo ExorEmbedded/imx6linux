@@ -56,7 +56,8 @@
 #define DRV_NAME			"flexcan"
 
 /* 8 for RX fifo and 2 error handling */
-#define FLEXCAN_NAPI_WEIGHT		(8 + 2)
+//#define FLEXCAN_NAPI_WEIGHT		(8 + 2)
+#define FLEXCAN_NAPI_WEIGHT		(24 + 2)
 
 /* FLEXCAN module configuration register (CANMCR) bits */
 #define FLEXCAN_MCR_MDIS		BIT(31)

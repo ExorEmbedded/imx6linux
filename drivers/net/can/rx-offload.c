@@ -276,7 +276,8 @@ EXPORT_SYMBOL_GPL(can_rx_offload_add_fifo);
 void can_rx_offload_enable(struct can_rx_offload *offload)
 {
 	can_rx_offload_reset(offload);
-	napi_enable(&offload->napi);
+        if (!test_bit(NAPI_STATE_THREADED, &offload->napi.state))
+            napi_enable(&offload->napi);
 }
 EXPORT_SYMBOL_GPL(can_rx_offload_enable);
 
