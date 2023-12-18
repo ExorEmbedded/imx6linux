@@ -263,13 +263,17 @@
 #define ERRCONTROL1		25
 #define ERRCONTROL0		26
 
-#define MIPI_BITCLK_TH (200000l)
-
 #define MIPI_FIFO_TIMEOUT	msecs_to_jiffies(250)
 
+#ifdef CONFIG_DRM_TI_SN65DSI83
+#define MIPI_HFP_PKT_OVERHEAD	3
+#define MIPI_HBP_PKT_OVERHEAD	3
+#define MIPI_HSA_PKT_OVERHEAD	3
+#else
 #define MIPI_HFP_PKT_OVERHEAD	6
 #define MIPI_HBP_PKT_OVERHEAD	6
 #define MIPI_HSA_PKT_OVERHEAD	6
+#endif
 
 #define to_sec_mipi_dsim(dsi) container_of(dsi, struct sec_mipi_dsim, dsi_host)
 #define conn_to_sec_mipi_dsim(conn)		\
@@ -901,18 +905,27 @@ static void sec_mipi_dsim_set_main_mode(struct sec_mipi_dsim *dsim)
 		hfp_wc = dsim->hpar->hfp_wc;
 		hbp_wc = dsim->hpar->hbp_wc;
 	}
-	
-#ifdef CONFIG_DRM_TI_SN65DSI83	
-			hfp_wc = 1;
-			hbp_wc = 1;
-
-			if(dsim->bit_clk < MIPI_BITCLK_TH)
-			{
-				hfp_wc = 8;
-				hbp_wc = 8;
+#ifdef CONFIG_DRM_TI_SN65DSI83
+			if((vmode->hsync_len + vmode->hback_porch) == 88)
+			{   //Specific case of 1280x800 displays with EK79202 controllers
+				hfp_wc = 15;
+				hbp_wc = 70;
 			}
-#endif
 
+			if((vmode->hactive==800) && (vmode->vactive==480) && (vmode->hsync_len != 200))
+			{	//Specific case of 800x480 displays (except display_id=58) to generate the required timings
+				hbp_wc = 1;
+			}
+
+			if((vmode->hactive==1280) && (vmode->vactive==800) && (vmode->hsync_len == 100))
+			{	//Specific case of 1280x800 displays, like disp_id=55, to generate the required timings
+				hbp_wc = 70;
+				hfp_wc = 118;
+			}
+
+			if(hbp_wc > 70)
+				hbp_wc = 70;
+#endif
 	mhporch |= MHPORCH_SET_MAINHFP(hfp_wc) |
 		   MHPORCH_SET_MAINHBP(hbp_wc);
 
@@ -926,14 +939,13 @@ static void sec_mipi_dsim_set_main_mode(struct sec_mipi_dsim *dsim)
 			 wc - MIPI_HSA_PKT_OVERHEAD : vmode->hsync_len;
 	} else
 		hsa_wc = dsim->hpar->hsa_wc;
-#ifdef CONFIG_DRM_TI_SN65DSI83	
-	hsa_wc = 1;
-	if(dsim->bit_clk < MIPI_BITCLK_TH)
-	{
-		hsa_wc = 8;
+
+#ifdef CONFIG_DRM_TI_SN65DSI83
+	if((vmode->hsync_len + vmode->hback_porch) == 88)
+	{   //Specific case of 1280x800 displays with EK79202 controllers
+		hsa_wc = 15;
 	}
-#endif	
-	
+#endif
 	msync |= MSYNC_SET_MAINVSA(vmode->vsync_len) |
 		 MSYNC_SET_MAINHSA(hsa_wc);
 
@@ -1101,8 +1113,8 @@ static void sec_mipi_dsim_config_clkctrl(struct sec_mipi_dsim *dsim)
 
 	clkctrl |= CLKCTRL_TXREQUESTHSCLK;
 
-	/* using 1.0Gbps PHY */
-	clkctrl |= CLKCTRL_DPHY_SEL_1G;
+	/* using 1.5Gbps PHY */
+	clkctrl |= CLKCTRL_DPHY_SEL_1P5G;
 
 	clkctrl |= CLKCTRL_ESCCLKEN;
 
@@ -1248,15 +1260,6 @@ struct dsim_pll_pms *sec_mipi_dsim_calc_pmsk(struct sec_mipi_dsim *dsim)
 		return ERR_PTR(-EINVAL);
 	}
 	
-#ifdef CONFIG_DRM_TI_SN65DSI83	
-	if(dsim->bit_clk == 199200l)
-	{ //Override pms parameters for display id 58 and equivalent 
-		best_p = 2;
-		best_m = 266;
-		best_s = 3;
-	}
-#endif	
-
 	pll_pms->p = best_p;
 	pll_pms->m = best_m;
 	pll_pms->s = best_s;
@@ -1285,12 +1288,6 @@ int sec_mipi_dsim_check_pll_out(void *driver_private,
 	pix_clk = mode->clock;
 	bit_clk = DIV_ROUND_UP(pix_clk * bpp, dsim->lanes);
 
-#ifdef CONFIG_DRM_TI_SN65DSI83	
-	if((mode->htotal - mode->hsync_start)==88)
-	{
-		bit_clk *=2;
-	}
-#endif
 	if (bit_clk * 1000 > pdata->max_data_rate) {
 		dev_err(dsim->dev,
 			"reuest bit clk freq exceeds lane's maximum value\n");

@@ -110,9 +110,11 @@
  *                                      reduced min duty to reach zero-dimming on imx8 for eX715MG
  *1.51			SS							15.06.2023	Modified display code #85: MAX duty set to 100% for 700cd/m2 as old jSMART10, pcn describes wrong 400cd/m2 spec
  *1.52			SS							20.11.2023	Added display code #87: Yes YTCA10WLBC-07-100C-V2 eSMART02-10" 
- *																			Added display code #88: Yes YTC700TLBF-13-200C-V1 eSMART02-7", only datasheet spec no real test 
- *																			Added display code #89: Yes YTC500RLBH-42-200C eSMART02-5", only datasheet spec no real test 
- *																			Added display code #90: Innolux G156HCE-LN1 eSMART02-15", only datasheet spec no real test
+ *														Added display code #88: Yes YTC700TLBF-13-200C-V1 eSMART02-7", only datasheet spec no real test
+ *														Added display code #89: Yes YTC500RLBH-42-200C eSMART02-5", only datasheet spec no real test
+ *														Added display code #90: Innolux G156HCE-LN1 eSMART02-15", only datasheet spec no real test
+ * 1.53         GP                          14.12.2023  Modified display code #87 to use same timings of #86, since they use the same controller chip.
+ *                                                      Modified display code #56 to use different hfp value with imx8mm, to get proper timings with the sn65dsi8x mipi2lvds bridge.
  *
  * NEXT AVAILABLE DISPLAY CODE: 91
  */
@@ -696,10 +698,14 @@ static struct t_DisplayParams displayconfig[] = {
         
         .pclk_freq = 76000, 
         .pclk_inv  = 1,		     //27.03.2017 inverted clock polarity due to IMX.6 bug
-        
-        .hs_fp     = 47, 
-        .hs_bp     = 47, 
-        .hs_w      = 100, 
+
+#ifdef CONFIG_SOC_IMX6Q
+        .hs_fp     = 47,
+#else
+        .hs_fp     = 12,
+#endif
+        .hs_bp     = 47,
+        .hs_w      = 100,
         .hs_inv    = 0,
         
         .vs_fp     = 9, 
@@ -1504,20 +1510,20 @@ static struct t_DisplayParams displayconfig[] = {
         .rezx      = 1280, 
         .rezy      = 800, 
         .bpp       = 24,
-        
-        .pclk_freq = 62600,         //US04 supporta un numero limitato di freq (fare sempre check con tabella PLL)
-        .pclk_inv  = 1,							//inverted clock polarity (compatibility with IMX.6 bug)
-        
-        .hs_fp     = 12,            
-        .hs_bp     = 86,            
-        .hs_w      = 2,             
+
+        .pclk_freq = 66600,
+        .pclk_inv  = 1,							//inverted clock polarity due to IMX.6 bug
+
+        .hs_fp     = 12,
+        .hs_bp     = 86,
+        .hs_w      = 2,
         .hs_inv    = 0,
-        
-        .vs_fp     = 15,             
-        .vs_bp     = 3,            
-        .vs_w      = 20,             
+
+        .vs_fp     = 1,
+        .vs_bp     = 3,
+        .vs_w      = 20,
         .vs_inv    = 0,
-        
+
         .blank_inv      = 0,
         
         .pwmfreq        = 5000,				//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.

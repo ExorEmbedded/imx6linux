@@ -47,12 +47,13 @@
 extern int hw_dispid; //This is an exported variable holding the display id value, if passed from cmdline
 
 static const unsigned long avail_pclk_Khz[] = { //List of available LVDS pixel clock frequencies 
-	133200, 88500, 76000, 75000, 66600, 62600, 51000, 33200, 30000
+	125300, 87600, 76000, 75000, 66000, 62600, 51000, 33000, 29700
 };
 
 int dispid_get_videomode(struct videomode* vm, int dispid)
 {
 	int i=0;
+	int j=0;
 	unsigned long min_err, err;
 	unsigned long target_pclk;
 	unsigned long eff_pclk;
@@ -90,17 +91,25 @@ int dispid_get_videomode(struct videomode* vm, int dispid)
 	frefresh = (1000 * target_pclk) / ((vm->hactive)*(vm->vactive));
 	if(frefresh < 40)
 	{
+		unsigned long hblank;
+
 		f_sn65dsi84_dual_lvds = 1;
 		target_pclk *= 2;
+		//In case of DUAL_LVDS display, equally distribute the DE blank time with hfb, hbp, hw
+		hblank = vm->hsync_len + vm->hfront_porch + vm->hback_porch;
+		hblank /= 3;
+		vm->hsync_len = hblank;
+		vm->hfront_porch = hblank;
+		vm->hback_porch = hblank;
 	}
 #endif	
-	for (i = 0; i < ARRAY_SIZE(avail_pclk_Khz); i++)
+	for (j = 0; j < ARRAY_SIZE(avail_pclk_Khz); j++)
 	{
-		err = abs(avail_pclk_Khz[i] - target_pclk);
+		err = abs(avail_pclk_Khz[j] - target_pclk);
 		if(err < min_err)
 		{
 			min_err=err;
-			eff_pclk = avail_pclk_Khz[i];
+			eff_pclk = avail_pclk_Khz[j];
 		}
 	}
 	vm->pixelclock = 1000 * eff_pclk;

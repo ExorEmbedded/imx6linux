@@ -382,7 +382,7 @@
 
                     lvds_bridge_in: endpoint {
                         remote-endpoint = <&dsim_to_lvds_bridge>;
-                        data-lanes = <1 2 3 4>;
+                        data-lanes = <1 2>;
                     };
                 };
 

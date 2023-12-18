@@ -434,16 +434,6 @@ static void sn65dsi83_atomic_enable(struct drm_bridge *bridge,
 		     REG_DSI_CLK_CHA_DSI_CLK_RANGE(sn65dsi83_get_dsi_range(ctx, mode)));
 	regmap_write(ctx->regmap, REG_RC_DSI_CLK,
 		     REG_RC_DSI_CLK_DSI_CLK_DIVIDER(sn65dsi83_get_dsi_div(ctx)));
-	
-	if((mode->htotal - mode->hsync_start)==88)
-	{
-		u8 tmp;
-		
-		tmp = 2 * (sn65dsi83_get_dsi_range(ctx, mode));
-		regmap_write(ctx->regmap, REG_DSI_CLK, REG_DSI_CLK_CHA_DSI_CLK_RANGE(tmp));
-		tmp = 2 * (sn65dsi83_get_dsi_div(ctx) + 1) - 1;
-		regmap_write(ctx->regmap, REG_RC_DSI_CLK, REG_RC_DSI_CLK_DSI_CLK_DIVIDER(tmp));
-	}
 
 	/* Set number of DSI lanes and LVDS link config. */
 	regmap_write(ctx->regmap, REG_DSI_LANE,
@@ -455,9 +445,9 @@ static void sn65dsi83_atomic_enable(struct drm_bridge *bridge,
 	regmap_write(ctx->regmap, REG_DSI_EQ, 0x00);
 
 	/* Set up sync signal polarity. */
-	val = (mode->flags & DRM_MODE_FLAG_NHSYNC ?
+	val = (crtc_state->mode.flags & DRM_MODE_FLAG_NHSYNC ?
 	       REG_LVDS_FMT_HS_NEG_POLARITY : 0) |
-	      (mode->flags & DRM_MODE_FLAG_NVSYNC ?
+	      (crtc_state->mode.flags & DRM_MODE_FLAG_NVSYNC ?
 	       REG_LVDS_FMT_VS_NEG_POLARITY : 0);
 
 	/* Set up bits-per-pixel, 18bpp or 24bpp. */
@@ -655,6 +645,7 @@ static int sn65dsi83_parse_dt(struct sn65dsi83 *ctx, enum sn65dsi83_model model)
 			printk("DUAL LVDS mode detected\n");
 			ctx->lvds_dual_link = true;
 			ctx->lvds_dual_link_even_odd_swap = false;
+			ctx->dsi_lanes = 4; //Force 4 dsi lanes mode if dual lvds display used
 		}
 	}
 
