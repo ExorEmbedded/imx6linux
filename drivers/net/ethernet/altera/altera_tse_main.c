@@ -1496,6 +1496,15 @@ err_check_bar_mapping:
   return rc;
 }  
 
+/*
+ * Shutdown one instance of the TSE over PCIe core
+ */
+static void altera_tse_pciedev_shutdown(struct pci_dev *pdev)
+{
+	struct net_device *netdev = pci_get_drvdata(pdev);
+	tse_shutdown(netdev);
+};
+
 static const struct pci_device_id altera_tse_pciedev_ids[] = {
 	{ PCI_DEVICE(0x1172, 0xe3ac) },
 	{ PCI_DEVICE(0x1172, 0xf3ac) },
@@ -1507,6 +1516,7 @@ MODULE_DEVICE_TABLE(pci, altera_tse_pciedev_ids);
 static struct pci_driver altera_tse_driver = {
 	.probe		= altera_tse_pciedev_probe,
 	.remove		= NULL,
+	.shutdown	= altera_tse_pciedev_shutdown,
 	.suspend	= NULL,
 	.resume		= NULL,
 	.name	= ALTERA_TSE_RESOURCE_NAME,
