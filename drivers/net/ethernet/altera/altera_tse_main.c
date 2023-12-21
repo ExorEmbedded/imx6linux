@@ -1502,7 +1502,10 @@ err_check_bar_mapping:
 static void altera_tse_pciedev_shutdown(struct pci_dev *pdev)
 {
 	struct net_device *netdev = pci_get_drvdata(pdev);
-	tse_shutdown(netdev);
+	if (netif_running(netdev))
+	{
+		tse_shutdown(netdev);
+	}
 };
 
 static const struct pci_device_id altera_tse_pciedev_ids[] = {
