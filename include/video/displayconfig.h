@@ -113,10 +113,11 @@
  *														Added display code #88: Yes YTC700TLBF-13-200C-V1 eSMART02-7", only datasheet spec no real test
  *														Added display code #89: Yes YTC500RLBH-42-200C eSMART02-5", only datasheet spec no real test
  *														Added display code #90: Innolux G156HCE-LN1 eSMART02-15", only datasheet spec no real test
- * 1.53         GP                          14.12.2023  Modified display code #87 to use same timings of #86, since they use the same controller chip.
+ *1.53          GP                          14.12.2023  Modified display code #87 to use same timings of #86, since they use the same controller chip.
  *                                                      Modified display code #56 to use different hfp value with imx8mm, to get proper timings with the sn65dsi8x mipi2lvds bridge.
+ *1.54          GP                          09.01.2024  Added display code #91: Futurelabs FLC-101HMLG200002#00 for eX710
  *
- * NEXT AVAILABLE DISPLAY CODE: 91
+ * NEXT AVAILABLE DISPLAY CODE: 92
  */
  
 #ifndef DISPLAYCONFIG_H
@@ -1608,6 +1609,32 @@ static struct t_DisplayParams displayconfig[] = {
         .brightness_min = 5,		
         .brightness_max = 100,
     },                     
+    /* 91: FutureLabs FLC-101HMLG200002#00 24 bit 1280x800 (exact timing required) */
+    {
+        .dispid    = 91,
+        .rezx      = 1280,
+        .rezy      = 800,
+        .bpp       = 24,
+
+        .pclk_freq = 66600,
+        .pclk_inv  = 1,							//inverted clock polarity due to IMX.6 bug
+
+        .hs_fp     = 12,
+        .hs_bp     = 86,
+        .hs_w      = 2,
+        .hs_inv    = 0,
+
+        .vs_fp     = 1,
+        .vs_bp     = 3,
+        .vs_w      = 20,
+        .vs_inv    = 0,
+
+        .blank_inv      = 0,
+
+        .pwmfreq        = 200,
+        .brightness_min = 0x6300,		 //min duty cycle 0.99%
+        .brightness_max = 100,
+    },
     /* END OF LIST */
     {
       .dispid    = NODISPLAY,
