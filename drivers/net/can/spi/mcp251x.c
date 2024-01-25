@@ -81,6 +81,22 @@
 #include <linux/spi/tja1145.h>
 #endif
 
+#define USE_AGRING
+#define USE_KTHREAD
+//#define XMIT_DIRECT
+//#define LOG_PERFORMANCE
+
+#ifdef USE_KTHREAD
+#include <linux/kthread.h>
+#include <linux/sched.h>
+#include <uapi/linux/sched/types.h>
+#endif
+
+#ifdef USE_AGRING
+#include <linux/miscdevice.h>
+#include <linux/completion.h>
+#endif
+
 /* SPI interface instruction set */
 #define INSTRUCTION_WRITE	0x02
 #define INSTRUCTION_READ	0x03
@@ -260,9 +276,22 @@ struct mcp251x_priv {
 	struct sk_buff *tx_skb;
 	int tx_len;
 
+#ifdef USE_KTHREAD
+	struct kthread_worker           kworker;
+	struct task_struct              *kworker_task;
+	struct kthread_work             tx_work;
+	struct kthread_work             restart_work;
+#ifdef USE_AGRING
+	struct kthread_work             tx_work_agring;
+#endif
+#else	
 	struct workqueue_struct *wq;
 	struct work_struct tx_work;
 	struct work_struct restart_work;
+#ifdef USE_AGRING
+	struct work_struct tx_work_agring;
+#endif
+#endif
 
 	int force_quit;
 	int after_suspend;
@@ -279,7 +308,51 @@ struct mcp251x_priv {
 	struct tja1145_functions_accessor*  transceiver_fc;
 	struct work_struct work;
 #endif	
+
+#ifdef USE_AGRING
+	struct miscdevice miscdev;
+	bool misc_registered;
+	unsigned int num_buffers;
+
+	u_char* shared_mem;
+
+	u_char** tx_buffers;
+	unsigned int* tx_indexes;
+	unsigned int tx_head;
+	unsigned int tx_tail;
+
+	u_char** tx_lowp_buffers;
+	unsigned int* tx_lowp_indexes;
+	unsigned int tx_lowp_head;
+	unsigned int tx_lowp_tail;
+
+	struct mutex tx_lock;
+
+	u_char** rx_buffers;
+	unsigned int rx_head;
+	unsigned int rx_tail;
+	struct mutex rx_lock;
+
+	atomic_t usage_counter;
+	atomic_t tx_pending;
+	atomic_t tx_highp_pending;
+	atomic_t tx_lowp_pending;
+
+	atomic_t tx_highp_overrun;
+	atomic_t rx_highp_overrun;
+	atomic_t tx_lowp_overrun;
+	atomic_t rx_lowp_overrun;
+
+	struct completion tx_done;
+
+	atomic_t stop_pending;
+	struct completion tx_running;
+#endif
 };
+
+#ifdef LOG_PERFORMANCE
+u64 mcp251x_prev_tx_ns = 0;
+#endif
 
 #if defined(CONFIG_CAN_TJA1145) || defined(CONFIG_CAN_TJA1145_MODULE)
 static void mcp251x_can_plat_work_func(struct work_struct *work)
@@ -292,10 +365,563 @@ static void mcp251x_can_plat_work_func(struct work_struct *work)
 }
 #endif
 
+#ifdef USE_AGRING
+#define SUCCESS   0
+#define BUFFER_SIZE 16
+
+#define SIOC_CAN_ENABLE		  (SIOCDEVPRIVATE +0x0A)		/** 0x89F0 + 0x0A */
+#define SIOC_CAN_DISABLE	  (SIOCDEVPRIVATE +0x0B)		/** 0x89F0 + 0x0B */
+
+static int mcp251x_can_init_worker(struct net_device* net);
+static void mcp251x_can_deinit_worker(struct net_device* net);
+static bool mcp251x_can_agring_tx_dequeue(struct mcp251x_priv* priv, unsigned int* idx, bool* lowp);
+
+static void mcp251x_clean(struct net_device *net);
+static void mcp251x_hw_tx(struct spi_device *spi, struct can_frame *frame, int tx_buf_idx);
+
+static int mcp251x_can_ioctl_tx(struct net_device *dev, unsigned int idx)
+{
+	struct mcp251x_priv *priv = netdev_priv(dev);
+	struct spi_device *spi = priv->spi;
+	struct can_frame* frame = (struct can_frame*)priv->tx_buffers[idx];
+
+	dev_dbg(&spi->dev, "frame %d starting transmission, %d pending", idx, atomic_read(&priv->tx_highp_pending));
+
+	reinit_completion(&priv->tx_done);
+	mutex_lock(&priv->mcp_lock);
+
+	if (priv->can.state == CAN_STATE_BUS_OFF) {
+		mcp251x_clean(dev);
+	} else {
+		if (frame->can_dlc > CAN_FRAME_MAX_DATA_LEN)
+			frame->can_dlc = CAN_FRAME_MAX_DATA_LEN;
+		mcp251x_hw_tx(spi, frame, 0);
+		priv->tx_len = 1 + frame->can_dlc;
+	}
+
+	mutex_unlock(&priv->mcp_lock);
+
+	dev_dbg(&spi->dev, "frame %d waiting for completion, %d pending", idx, atomic_read(&priv->tx_highp_pending));
+	wait_for_completion_timeout(&priv->tx_done, msecs_to_jiffies(500));
+
+	atomic_dec(&priv->tx_highp_pending);
+	atomic_dec(&priv->tx_pending);
+	dev_dbg(&spi->dev, "frame %d tx complete, %d pending", idx, atomic_read(&priv->tx_highp_pending));
+
+	return 0;
+}
+
+static int mcp251x_can_ioctl_tx_lowp(struct net_device *dev, unsigned int idx)
+{
+	struct mcp251x_priv *priv = netdev_priv(dev);
+	struct spi_device *spi = priv->spi;
+	struct can_frame* frame = (struct can_frame*)priv->tx_lowp_buffers[idx];
+
+	dev_dbg(&spi->dev, "frame LOW %d starting transmission, %d pending", idx, atomic_read(&priv->tx_lowp_pending));
+
+	reinit_completion(&priv->tx_done);
+	mutex_lock(&priv->mcp_lock);
+
+	if (priv->can.state == CAN_STATE_BUS_OFF) {
+		mcp251x_clean(dev);
+	} else {
+		if (frame->can_dlc > CAN_FRAME_MAX_DATA_LEN)
+			frame->can_dlc = CAN_FRAME_MAX_DATA_LEN;
+		mcp251x_hw_tx(spi, frame, 0);
+		priv->tx_len = 1 + frame->can_dlc;
+	}
+
+	mutex_unlock(&priv->mcp_lock);
+
+	dev_dbg(&spi->dev, "frame LOW %d waiting for completion, %d pending", idx, atomic_read(&priv->tx_lowp_pending));
+	wait_for_completion_timeout(&priv->tx_done, msecs_to_jiffies(500));
+
+	atomic_dec(&priv->tx_lowp_pending);
+	atomic_dec(&priv->tx_pending);
+	dev_dbg(&spi->dev, "frame LOW %d tx complete, %d pending", idx, atomic_read(&priv->tx_lowp_pending));
+
+	return 0;
+}
+
+#ifdef USE_KTHREAD
+static void mcp251x_tx_work_agring_handler(struct kthread_work *ws)
+#else
+static void mcp251x_tx_work_agring_handler(struct work_struct *ws)
+#endif
+{
+	struct mcp251x_priv *priv = container_of(ws, struct mcp251x_priv,
+						 tx_work_agring);
+	struct net_device *net = priv->net;
+	struct spi_device *spi = priv->spi;
+	unsigned int idx;
+	bool lowp;
+
+	reinit_completion(&priv->tx_running);
+	while ((!atomic_read(&priv->stop_pending)) && mcp251x_can_agring_tx_dequeue(priv, &idx, &lowp))
+	{
+		dev_dbg(&spi->dev, "Trasmitting frame %s %u", lowp? "LOW" : "NORM", idx);
+		if (lowp)
+			mcp251x_can_ioctl_tx_lowp(net, idx);
+		else
+			mcp251x_can_ioctl_tx(net, idx);
+	}
+
+	dev_dbg(&spi->dev, "No more frames to transmit");
+	complete(&priv->tx_running);
+}
+
+int mcp251x_can_agring_is_active(struct mcp251x_priv* priv)
+{
+	return atomic_read(&priv->usage_counter);
+}
+
+static u_char *mcp251x_can_allocate_shared_memory(u_int64_t *mem_len)
+{
+	u_int64_t tot_mem = *mem_len;
+	u_char *shared_mem;
+
+	tot_mem = PAGE_ALIGN(tot_mem);
+
+	/* Alignment necessary on ARM platforms */
+	tot_mem += SHMLBA - (tot_mem % SHMLBA);
+
+	/* Memory is already zeroed */
+	shared_mem = vmalloc_user(tot_mem);
+
+	*mem_len = tot_mem;
+	return shared_mem;
+}
+
+static void mcp251x_can_allocate_buffers(struct mcp251x_priv *priv, unsigned int num_buffers)
+{
+	int i;
+	u_int64_t mem_size = num_buffers * BUFFER_SIZE; 
+	u_int64_t num_pages = (mem_size / PAGE_SIZE) + ((mem_size % PAGE_SIZE)? 1 : 0);
+	u_int64_t mem_size_aligned = num_pages * PAGE_SIZE;
+	u_int64_t mem_len = 3 * mem_size_aligned;
+
+	priv->num_buffers = num_buffers;
+	priv->shared_mem = mcp251x_can_allocate_shared_memory(&mem_len);
+	priv->tx_head = 0;
+	priv->tx_tail = 0;
+	priv->tx_buffers = kzalloc(num_buffers * sizeof(u_char*), GFP_KERNEL);
+	priv->tx_indexes = kzalloc(num_buffers * sizeof(unsigned int), GFP_KERNEL);
+
+	priv->tx_lowp_head = 0;
+	priv->tx_lowp_tail = 0;
+	priv->tx_lowp_buffers = kzalloc(num_buffers * sizeof(u_char*), GFP_KERNEL);
+	priv->tx_lowp_indexes = kzalloc(num_buffers * sizeof(unsigned int), GFP_KERNEL);
+
+	priv->rx_buffers = kzalloc(num_buffers * sizeof(u_char*), GFP_KERNEL);
+	priv->rx_head = 0;
+	priv->rx_tail = 0;
+
+	for (i=0; i<num_buffers; i++)
+	{
+		priv->tx_buffers[i] = priv->shared_mem + (i * BUFFER_SIZE);
+		priv->tx_lowp_buffers[i] = priv->shared_mem + mem_size_aligned + (i * BUFFER_SIZE);
+		priv->rx_buffers[i] = priv->shared_mem + (2 * mem_size_aligned) + (i * BUFFER_SIZE);
+	}
+}
+
+static void mcp251x_can_deallocate_buffers(struct mcp251x_priv *priv)
+{
+	if (priv->shared_mem != NULL)
+	{
+		vfree(priv->shared_mem);
+		priv->shared_mem = NULL;
+	}
+
+	if (priv->tx_buffers)
+	{
+		kfree(priv->tx_buffers);
+		priv->tx_buffers = NULL;
+	}
+
+	if (priv->tx_indexes)
+	{
+		kfree(priv->tx_indexes);
+		priv->tx_indexes = NULL;
+	}
+
+	if (priv->tx_lowp_indexes)
+	{
+		kfree(priv->tx_lowp_indexes);
+		priv->tx_lowp_indexes = NULL;
+	}
+
+	if (priv->rx_buffers)
+	{
+		kfree(priv->rx_buffers);
+		priv->rx_buffers = NULL;
+	}
+}
+
+static struct can_frame* mcp251x_can_agring_rx_next_frame(struct mcp251x_priv* priv)
+{
+	struct can_frame* frame;
+	
+	mutex_lock(&priv->rx_lock);
+	frame = (struct can_frame*)priv->rx_buffers[priv->rx_head];
+	mutex_unlock(&priv->rx_lock);
+
+	return frame;
+}
+
+static void mcp251x_can_agring_rx_enqueue(struct mcp251x_priv* priv)
+{
+	unsigned int next;
+
+	mutex_lock(&priv->rx_lock);
+	
+	next = (priv->rx_head + 1) % priv->num_buffers;
+	if (next == priv->rx_tail)
+	{
+		netdev_err(priv->net, "RX overrun");
+		atomic_inc(&priv->rx_highp_overrun);
+		priv->rx_tail = (priv->rx_tail + 1) % priv->num_buffers;
+	}
+
+	priv->rx_head = next;
+
+	mutex_unlock(&priv->rx_lock);
+}
+
+static bool mcp251x_can_agring_rx_dequeue(struct mcp251x_priv* priv, unsigned int* tail)
+{
+	bool avail;
+
+	mutex_lock(&priv->rx_lock);
+	
+	avail = priv->rx_head != priv->rx_tail;
+	if (avail)
+	{
+		*tail = priv->rx_tail;
+		priv->rx_tail = (priv->rx_tail + 1) % priv->num_buffers;
+	}
+
+	mutex_unlock(&priv->rx_lock);
+
+	return avail;
+}
+
+static int mcp251x_can_agring_tx_enqueue(struct mcp251x_priv* priv, unsigned int idx, bool lowp)
+{
+	unsigned int next;
+	int success = 1;
+
+	mutex_lock(&priv->tx_lock);
+
+	if (!lowp)
+	{
+		priv->tx_indexes[priv->tx_head] = idx;
+
+		next = (priv->tx_head + 1) % priv->num_buffers;
+		if (next == priv->tx_tail)
+		{
+			netdev_err(priv->net, "TX overrun");
+			atomic_inc(&priv->tx_highp_overrun);
+			priv->tx_tail = (priv->tx_tail + 1) % priv->num_buffers;
+			success = 0;
+		}
+
+		priv->tx_head = next;
+	}
+	else
+	{
+		priv->tx_lowp_indexes[priv->tx_lowp_head] = idx;
+
+		next = (priv->tx_lowp_head + 1) % priv->num_buffers;
+		if (next == priv->tx_lowp_tail)
+		{
+			netdev_err(priv->net, "TX LOW overrun");
+			atomic_inc(&priv->tx_lowp_overrun);
+			priv->tx_lowp_tail = (priv->tx_lowp_tail + 1) % priv->num_buffers;
+			success = 0;
+		}
+
+		priv->tx_lowp_head = next;
+	}
+
+	mutex_unlock(&priv->tx_lock);
+
+	return success;
+}
+
+static bool mcp251x_can_agring_tx_dequeue(struct mcp251x_priv* priv, unsigned int* idx, bool* lowp)
+{
+	bool avail;
+
+	mutex_lock(&priv->tx_lock);
+	
+	avail = priv->tx_head != priv->tx_tail;
+	if (avail)
+	{
+		*idx = priv->tx_indexes[priv->tx_tail];
+		*lowp = false;
+		priv->tx_tail = (priv->tx_tail + 1) % priv->num_buffers;
+	}
+	else
+	{
+		avail = priv->tx_lowp_head != priv->tx_lowp_tail;
+		if (avail)
+		{
+			*idx = priv->tx_lowp_indexes[priv->tx_lowp_tail];
+			*lowp = true;
+			priv->tx_lowp_tail = (priv->tx_lowp_tail + 1) % priv->num_buffers;
+		}
+	}
+
+	mutex_unlock(&priv->tx_lock);
+
+	return avail;
+}
+
+static int mcp251x_can_agring_open(struct inode* node, struct file* f);
+static int mcp251x_can_agring_close(struct inode* node, struct file* f);
+static long mcp251x_can_agring_ioctl(struct file* f, unsigned int ioctl_num, unsigned long ioctl_param);
+static int mcp251x_can_agring_mmap(struct file* f, struct vm_area_struct* vma);
+
+static const struct file_operations mcp251x_can_agring_fops = {
+  .owner   = THIS_MODULE,
+  .read    = NULL,
+  .poll    = NULL,
+  .write   = NULL,
+  .compat_ioctl = mcp251x_can_agring_ioctl,
+  .unlocked_ioctl = mcp251x_can_agring_ioctl,
+  .open    = mcp251x_can_agring_open,
+  .release = mcp251x_can_agring_close,
+  .fasync  = NULL,
+  .llseek  = NULL,
+  .mmap    = mcp251x_can_agring_mmap 
+};
+
+static int mcp251x_can_agring_open(struct inode* node, struct file* f)
+{
+	return SUCCESS;
+}
+
+static int mcp251x_can_agring_close(struct inode* node, struct file* f)
+{
+	return SUCCESS;
+}
+
+static long mcp251x_can_agring_ioctl(struct file* f, unsigned int ioctl_num, unsigned long ioctl_param)
+{
+	struct miscdevice* dev = (struct miscdevice*)f->private_data;
+	struct net_device *ndev = (struct net_device*)dev_get_drvdata(dev->this_device);
+	struct mcp251x_priv* priv = netdev_priv(ndev);
+	unsigned int tail;
+	u_int64_t* user_data;
+	u_int64_t tmp_data[6];
+	int rc = SUCCESS;
+	bool lowp;
+
+	//printk(KERN_DEBUG "IOCTL %u\n", ioctl_num);
+
+	/* Switch according to the ioctl called */
+	switch (ioctl_num) 
+	{
+		case 0xCA00: // transmit
+			if (mcp251x_can_agring_is_active(priv))
+			{
+				unsigned int tx_idx = (unsigned int)ioctl_param & 0x3FFF;
+				if (tx_idx < priv->num_buffers)
+				{
+					dev_dbg(&ndev->dev, "transmit %u %p %s", tx_idx, priv->tx_buffers[tx_idx], (ioctl_param & 0x8000)? "DIRECT":"THREADED");
+					dev_dbg(&ndev->dev, "  x%02x x%02x x%02x x%02x x%02x x%02x", 
+						priv->tx_buffers[tx_idx][0], priv->tx_buffers[tx_idx][1], priv->tx_buffers[tx_idx][2], priv->tx_buffers[tx_idx][3], priv->tx_buffers[tx_idx][4], priv->tx_buffers[tx_idx][5]);
+
+					if (ioctl_param & 0x8000)
+					{
+						mcp251x_can_ioctl_tx(ndev, tx_idx);
+						atomic_inc(&priv->tx_highp_pending);
+						atomic_inc(&priv->tx_pending);
+					}
+					else				
+					{
+						lowp = ((ioctl_param & 0x4000) != 0);
+						if (mcp251x_can_agring_tx_enqueue(priv, tx_idx, lowp))
+						{
+							lowp? atomic_inc(&priv->tx_lowp_pending) : atomic_inc(&priv->tx_highp_pending);
+							atomic_inc(&priv->tx_pending);
+						}
+
+						if  (atomic_read(&priv->tx_pending) == 1)	
+						{
+#ifdef USE_KTHREAD
+							kthread_queue_work(&priv->kworker, &priv->tx_work_agring);
+#else
+							queue_work(priv->wq, &priv->tx_work_agring);
+#endif
+						}
+					}
+				}
+				else
+				{
+					dev_err(&ndev->dev, "invalid transmit index: %u (num. buffers: %u)", tx_idx, priv->num_buffers);
+					rc = -EINVAL;
+				}
+			}
+			else
+			{
+				dev_err(&ndev->dev, "agring not enabled, ignoring trasmit request");
+				rc = -ENODEV;
+			}
+			break;
+		case 0xCA01: // receive
+			if (mcp251x_can_agring_rx_dequeue(priv, &tail))
+			{
+				dev_dbg(&ndev->dev, "frame %d available", tail);
+				rc = tail;
+			}
+			else
+			{
+				rc = -ENOENT;
+			}
+			break;
+		case 0xCA02: // check if tx in progress
+			user_data = (u_int64_t*)ioctl_param;
+
+			tmp_data[0] = atomic_read(&priv->tx_highp_pending);
+			tmp_data[1] = atomic_read(&priv->tx_highp_overrun);
+			tmp_data[2] = atomic_read(&priv->rx_highp_overrun);
+			tmp_data[3] = atomic_read(&priv->tx_lowp_pending);
+			tmp_data[4] = atomic_read(&priv->tx_lowp_overrun);
+			tmp_data[5] = atomic_read(&priv->rx_lowp_overrun);
+			rc = copy_to_user(user_data, tmp_data, 6*sizeof(u_int64_t))? -EINVAL : SUCCESS;
+			break;
+		case 0xCA03: // reset of tx/rx overruns
+			atomic_set(&priv->tx_highp_overrun, 0);
+			atomic_set(&priv->rx_highp_overrun, 0);
+			atomic_set(&priv->tx_lowp_overrun, 0);
+			atomic_set(&priv->rx_lowp_overrun, 0);
+			rc = SUCCESS;
+			break;
+		case 0xCA0A: // enable
+			if (atomic_read(&priv->usage_counter) == 0)
+			{
+				dev_info(&ndev->dev, "enabling agring with %d buffers", (int)ioctl_param);
+
+				atomic_inc(&priv->usage_counter);
+				mcp251x_can_allocate_buffers(priv, (int)ioctl_param);
+
+				mutex_init(&priv->tx_lock);
+				mutex_init(&priv->rx_lock);
+
+				atomic_set(&priv->stop_pending, 0);
+				atomic_set(&priv->tx_pending, 0);
+				atomic_set(&priv->tx_highp_pending, 0);
+				atomic_set(&priv->tx_highp_overrun, 0);
+				atomic_set(&priv->rx_highp_overrun, 0);
+				atomic_set(&priv->tx_lowp_pending, 0);
+				atomic_set(&priv->tx_lowp_overrun, 0);
+				atomic_set(&priv->rx_lowp_overrun, 0);
+			}
+			else
+			{
+				dev_info(&ndev->dev, "agring already in use");
+				rc = -ENOENT;
+			}
+			break;
+		case 0xCA0B: // disable
+			if (atomic_read(&priv->usage_counter) > 0)
+			{
+				dev_info(&ndev->dev, "disabling agring");
+
+				atomic_set(&priv->stop_pending, 1);
+				wait_for_completion(&priv->tx_running);
+
+				atomic_dec(&priv->usage_counter);
+				mcp251x_can_deallocate_buffers(priv);
+			}
+			else
+			{
+				dev_info(&ndev->dev, "agring is not in use");
+				rc = -ENOENT;
+			}
+			break;
+	}
+
+	return rc;
+}
+
+static int mcp251x_can_agring_mmap(struct file* f, struct vm_area_struct* vma)
+{
+	struct miscdevice* dev = (struct miscdevice*)f->private_data;
+	struct net_device *ndev = (struct net_device*)dev_get_drvdata(dev->this_device);
+	struct mcp251x_priv* priv = netdev_priv(ndev);
+	int rc = -ENODEV;
+
+	rc = remap_vmalloc_range(vma, priv->shared_mem, 0);
+
+	return rc;
+}
+#endif
+
 static int mcp251x_can_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mcp251x_priv *priv = netdev_priv(dev);
 	netdev_dbg(dev, "%s request for new ioctl\n", __func__);
+
+#ifdef USE_AGRING
+	if (cmd == SIOC_CAN_ENABLE)
+	{
+		int ret = SUCCESS;
+		char name[20];
+		const char* dname = dev_name(&dev->dev);
+
+		netdev_dbg(dev, "%s request CAN_ENABLE\n", __func__);
+
+		if (! priv->misc_registered)
+		{
+			sprintf(name, "%s_agr", dname);
+			priv->miscdev.name = kstrdup(name, GFP_KERNEL);
+			priv->miscdev.minor = MISC_DYNAMIC_MINOR	; //(dname[3] - '0') + 1;
+			priv->miscdev.fops = &mcp251x_can_agring_fops; 
+
+			ret = misc_register(&priv->miscdev);
+			if (!ret)
+			{
+				dev_set_drvdata(priv->miscdev.this_device, dev);
+				priv->misc_registered = true;
+
+				netdev_info(dev, "agring device [%s.%d] registered successfully", priv->miscdev.name, priv->miscdev.minor);
+			}
+			else
+			{
+				netdev_err(dev, "failed to register agring device [%s.%d] - %d", priv->miscdev.name, priv->miscdev.minor, ret);
+				kfree(priv->miscdev.name);
+			}
+		}
+		else
+		{
+			netdev_info(dev, "agring device [%s] already registered", priv->miscdev.name);
+		}
+
+		atomic_set(&priv->usage_counter, 0);
+
+		return ret;
+	}
+	else if (cmd == SIOC_CAN_DISABLE)
+	{
+		netdev_dbg(dev, "%s request CAN_DISABLE\n", __func__);
+
+		if (priv->misc_registered)
+		{
+			misc_deregister(&priv->miscdev);
+			priv->misc_registered = false;
+
+			netdev_info(dev, "agring device [%s] successfully deregistered", priv->miscdev.name);
+		}
+		else
+		{
+			netdev_info(dev, "agring device [%s] already deregistered", priv->miscdev.name);
+		}
+
+		return SUCCESS;
+	}
+#endif
 
 #if defined(CONFIG_CAN_TJA1145) || defined(CONFIG_CAN_TJA1145_MODULE)
 	if(cmd >= SIOCTJA1145SETWAKEUP )
@@ -497,16 +1123,27 @@ static void mcp251x_hw_rx_frame(struct spi_device *spi, u8 *buf,
 static void mcp251x_hw_rx(struct spi_device *spi, int buf_idx)
 {
 	struct mcp251x_priv *priv = spi_get_drvdata(spi);
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 	struct can_frame *frame;
 	u8 buf[SPI_TRANSFER_BUF_LEN];
 
+#ifdef USE_AGRING
+	if (!mcp251x_can_agring_is_active(priv)) 
+	{
+#endif
 	skb = alloc_can_skb(priv->net, &frame);
 	if (!skb) {
 		dev_err(&spi->dev, "cannot allocate RX skb\n");
 		priv->net->stats.rx_dropped++;
 		return;
 	}
+#ifdef USE_AGRING
+	}
+	else
+	{
+		frame = mcp251x_can_agring_rx_next_frame(priv);
+	}
+#endif
 
 	mcp251x_hw_rx_frame(spi, buf, buf_idx);
 	if (buf[RXBSIDL_OFF] & RXBSIDL_IDE) {
@@ -540,7 +1177,18 @@ static void mcp251x_hw_rx(struct spi_device *spi, int buf_idx)
 
 	can_led_event(priv->net, CAN_LED_EVENT_RX);
 
-	netif_rx_ni(skb);
+#ifdef USE_AGRING
+	if (!mcp251x_can_agring_is_active(priv)) 
+	{
+#endif
+		netif_rx_ni(skb);
+#ifdef USE_AGRING
+	}
+	else 
+	{
+		mcp251x_can_agring_rx_enqueue(priv);
+	}
+#endif
 }
 
 static void mcp251x_hw_sleep(struct spi_device *spi)
@@ -553,6 +1201,10 @@ static netdev_tx_t mcp251x_hard_start_xmit(struct sk_buff *skb,
 {
 	struct mcp251x_priv *priv = netdev_priv(net);
 	struct spi_device *spi = priv->spi;
+#ifdef LOG_PERFORMANCE	
+	u64 start = ktime_get_ns();
+	u64 end, elapsed, delta;
+#endif
 
 	if (priv->tx_skb || priv->tx_len) {
 		dev_warn(&spi->dev, "hard_xmit called while tx busy\n");
@@ -560,11 +1212,58 @@ static netdev_tx_t mcp251x_hard_start_xmit(struct sk_buff *skb,
 	}
 
 	if (can_dropped_invalid_skb(net, skb))
+	{
+		dev_warn(&spi->dev, "hard_xmit dropped invalid skb\n");
 		return NETDEV_TX_OK;
+	}
 
 	netif_stop_queue(net);
 	priv->tx_skb = skb;
+
+#ifdef LOG_PERFORMANCE
+	end = ktime_get_ns();
+	elapsed = end - start;
+
+	if (elapsed > 500 * 1000)
+		dev_warn(&spi->dev, "hard_xmit [2] %llu ns\n", elapsed);
+	
+	if (mcp251x_prev_tx_ns > 0)
+	{
+		// more than 5 ms
+		delta = start - mcp251x_prev_tx_ns;
+		//dev_warn(&spi->dev, "*");
+		if (delta > 5 * 1000 * 1000)
+			dev_warn(&spi->dev, "hard_xmit [3] delta %llu ns\n", delta);
+	}
+
+	mcp251x_prev_tx_ns = start;
+#endif
+
+#ifdef XMIT_DIRECT
+	mutex_lock(&priv->mcp_lock);
+
+	if (priv->tx_skb) {
+		if (priv->can.state == CAN_STATE_BUS_OFF) {
+			mcp251x_clean(net);
+		} else {
+			struct can_frame *frame = (struct can_frame *)priv->tx_skb->data;
+
+			if (frame->can_dlc > CAN_FRAME_MAX_DATA_LEN)
+				frame->can_dlc = CAN_FRAME_MAX_DATA_LEN;
+			mcp251x_hw_tx(spi, frame, 0);
+			priv->tx_len = 1 + frame->can_dlc;
+			can_put_echo_skb(priv->tx_skb, net, 0);
+			priv->tx_skb = NULL;
+		}
+	}
+	mutex_unlock(&priv->mcp_lock);
+#else
+#ifdef USE_KTHREAD
+	kthread_queue_work(&priv->kworker, &priv->tx_work);
+#else
 	queue_work(priv->wq, &priv->tx_work);
+#endif
+#endif
 
 	return NETDEV_TX_OK;
 }
@@ -581,7 +1280,11 @@ static int mcp251x_do_set_mode(struct net_device *net, enum can_mode mode)
 		priv->restart_tx = 1;
 		if (priv->can.restart_ms == 0)
 			priv->after_suspend = AFTER_SUSPEND_RESTART;
+#ifdef USE_KTHREAD
+		kthread_queue_work(&priv->kworker, &priv->restart_work);
+#else
 		queue_work(priv->wq, &priv->restart_work);
+#endif		
 		break;
 	default:
 		return -EOPNOTSUPP;
@@ -739,8 +1442,8 @@ static int mcp251x_stop(struct net_device *net)
 
 	priv->force_quit = 1;
 	free_irq(spi->irq, priv);
-	destroy_workqueue(priv->wq);
-	priv->wq = NULL;
+
+	mcp251x_can_deinit_worker(net);
 
 	mutex_lock(&priv->mcp_lock);
 
@@ -779,7 +1482,11 @@ static void mcp251x_error_skb(struct net_device *net, int can_id, int data1)
 	}
 }
 
+#ifdef USE_KTHREAD
+static void mcp251x_tx_work_handler(struct kthread_work *ws)
+#else
 static void mcp251x_tx_work_handler(struct work_struct *ws)
+#endif
 {
 	struct mcp251x_priv *priv = container_of(ws, struct mcp251x_priv,
 						 tx_work);
@@ -787,7 +1494,18 @@ static void mcp251x_tx_work_handler(struct work_struct *ws)
 	struct net_device *net = priv->net;
 	struct can_frame *frame;
 
+#ifdef LOG_PERFORMANCE
+	if (mcp251x_prev_tx_ns > 0)
+	{
+		u64 start = ktime_get_ns();
+		u64 delta = start - mcp251x_prev_tx_ns;
+		if (delta > 5 * 1000 * 1000)
+			dev_warn(&spi->dev, "tx_work delta %llu ns\n", delta);
+	}
+#endif
+
 	mutex_lock(&priv->mcp_lock);
+
 	if (priv->tx_skb) {
 		if (priv->can.state == CAN_STATE_BUS_OFF) {
 			mcp251x_clean(net);
@@ -805,7 +1523,11 @@ static void mcp251x_tx_work_handler(struct work_struct *ws)
 	mutex_unlock(&priv->mcp_lock);
 }
 
+#ifdef USE_KTHREAD
+static void mcp251x_restart_work_handler(struct kthread_work *ws)
+#else
 static void mcp251x_restart_work_handler(struct work_struct *ws)
+#endif
 {
 	struct mcp251x_priv *priv = container_of(ws, struct mcp251x_priv,
 						 restart_work);
@@ -823,6 +1545,9 @@ static void mcp251x_restart_work_handler(struct work_struct *ws)
 			mcp251x_clean(net);
 			mcp251x_set_normal_mode(spi);
 			netif_wake_queue(net);
+#ifdef USE_AGRING
+			complete(&priv->tx_done);
+#endif				
 		} else {
 			mcp251x_hw_sleep(spi);
 		}
@@ -835,6 +1560,9 @@ static void mcp251x_restart_work_handler(struct work_struct *ws)
 		mcp251x_write_reg(spi, TXBCTRL(0), 0);
 		mcp251x_clean(net);
 		netif_wake_queue(net);
+#ifdef USE_AGRING
+		complete(&priv->tx_done);
+#endif				
 		mcp251x_error_skb(net, CAN_ERR_RESTARTED, 0);
 	}
 	mutex_unlock(&priv->mcp_lock);
@@ -854,6 +1582,8 @@ static irqreturn_t mcp251x_can_ist(int irq, void *dev_id)
 		int can_id = 0, data1 = 0;
 
 		mcp251x_read_2regs(spi, CANINTF, &intf, &eflag);
+
+		dev_dbg(&spi->dev, "%s intf %04x\n", __func__, intf);
 
 		/* mask out flags we don't care about */
 		intf &= CANINTF_RX | CANINTF_TX | CANINTF_ERR;
@@ -965,11 +1695,88 @@ static irqreturn_t mcp251x_can_ist(int irq, void *dev_id)
 				priv->tx_len = 0;
 			}
 			netif_wake_queue(net);
+#ifdef USE_AGRING
+			complete(&priv->tx_done);
+#endif				
 		}
 
 	}
 	mutex_unlock(&priv->mcp_lock);
 	return IRQ_HANDLED;
+}
+
+static int mcp251x_can_init_worker(struct net_device* net)
+{
+	struct mcp251x_priv *priv = netdev_priv(net);
+	struct spi_device *spi = priv->spi;
+
+#ifdef USE_KTHREAD
+	if (priv->kworker_task != NULL)
+	{
+		netdev_info(net, "worker alreay initialized\n");
+		return 0;
+	}
+
+	kthread_init_worker(&priv->kworker);
+	priv->kworker_task = kthread_run(kthread_worker_fn, &priv->kworker, dev_name(&spi->dev));
+	if (IS_ERR(priv->kworker_task)) {
+		netdev_err(net, "failed to create message pump task\n");
+		return -ENOMEM;
+	}
+	kthread_init_work(&priv->tx_work, mcp251x_tx_work_handler);
+	kthread_init_work(&priv->restart_work, mcp251x_restart_work_handler);
+
+#ifdef USE_AGRING
+	kthread_init_work(&priv->tx_work_agring, mcp251x_tx_work_agring_handler);
+	init_completion(&priv->tx_done);
+	init_completion(&priv->tx_running);
+#endif
+
+	{
+		struct sched_param param = { .sched_priority = MAX_RT_PRIO - 1 };
+		sched_setscheduler(priv->kworker_task, SCHED_FIFO, &param);
+	}	
+#else			
+	if (priv->wq != NULL)
+	{
+		netdev_info(net, "worker alreay initialized\n");
+		return 0;
+	}
+
+	priv->wq = alloc_workqueue("mcp251x_wq", WQ_FREEZABLE | WQ_MEM_RECLAIM,
+				   0);
+	INIT_WORK(&priv->tx_work, mcp251x_tx_work_handler);
+	INIT_WORK(&priv->restart_work, mcp251x_restart_work_handler);
+
+#ifdef USE_AGRING
+	INIT_WORK(&priv->tx_work_agring, mcp251x_tx_work_agring_handler);
+#endif
+#endif
+
+	netdev_info(net, "worker successfully initialized\n");
+	return 0;
+}
+
+static void mcp251x_can_deinit_worker(struct net_device* net)
+{
+	struct mcp251x_priv *priv = netdev_priv(net);
+
+#ifdef USE_KTHREAD
+	if (priv->kworker_task != NULL)
+	{
+		kthread_flush_worker(&priv->kworker);
+		kthread_stop(priv->kworker_task);
+		priv->kworker_task = NULL;
+	}
+#else
+	if (priv->wq != NULL)
+	{	
+		destroy_workqueue(priv->wq);
+		priv->wq = NULL;
+	}
+#endif
+
+	netdev_info(net, "worker successfully finalized\n");
 }
 
 static int mcp251x_open(struct net_device *net)
@@ -1001,10 +1808,7 @@ static int mcp251x_open(struct net_device *net)
 		goto open_unlock;
 	}
 
-	priv->wq = alloc_workqueue("mcp251x_wq", WQ_FREEZABLE | WQ_MEM_RECLAIM,
-				   0);
-	INIT_WORK(&priv->tx_work, mcp251x_tx_work_handler);
-	INIT_WORK(&priv->restart_work, mcp251x_restart_work_handler);
+	mcp251x_can_init_worker(net);
 
 	ret = mcp251x_hw_reset(spi);
 	if (ret) {
@@ -1291,6 +2095,17 @@ static int mcp251x_can_remove(struct spi_device *spi)
 	if( priv->transceiver_fc && priv->transceiver_fc->transceiver_stop )
 		priv->transceiver_fc->transceiver_stop(priv->transceiver_fc);
 #endif
+
+#ifdef USE_AGRING
+	if (atomic_read(&priv->usage_counter) > 0)
+	{
+		mcp251x_can_deallocate_buffers(priv);
+
+		misc_deregister(&priv->miscdev);
+		priv->misc_registered = false;
+	}
+#endif	
+
 	unregister_candev(net);
 
 	mcp251x_power_enable(priv->power, 0);
@@ -1343,7 +2158,11 @@ static int __maybe_unused mcp251x_can_resume(struct device *dev)
 
 	if (priv->after_suspend & AFTER_SUSPEND_UP) {
 		mcp251x_power_enable(priv->transceiver, 1);
+#ifdef USE_KTHREAD		
+		kthread_queue_work(&priv->kworker, &priv->restart_work);
+#else		
 		queue_work(priv->wq, &priv->restart_work);
+#endif		
 	} else {
 		priv->after_suspend = 0;
 	}
