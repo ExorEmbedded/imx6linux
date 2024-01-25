@@ -556,6 +556,11 @@ config EXGPIO_INIT
 	depends on OF
 	help
 	    Say Y to add support for initializing gpio lines through dtb.
+
+config MEMGUARD
+	bool "Exor Memguard technology"
+	help
+	    Say Y to add support for memguard
 	    
 	    
 source "drivers/misc/c2port/Kconfig"
