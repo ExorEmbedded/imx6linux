@@ -508,7 +508,12 @@ config PLXX_MANAGER_DA22
 	help
 	    Say Y to build the specific plugin plxx manager driver option for the DA22 target.
 	    If unsure say N.
-	    
+	
+config MEMGUARD
+	bool "Exor Memguard technology"
+	help
+	    Say Y to add support for memguard
+    
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

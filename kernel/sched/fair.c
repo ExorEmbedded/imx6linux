@@ -6948,6 +6948,11 @@ static void set_skip_buddy(struct sched_entity *se)
 		cfs_rq_of(se)->skip = se;
 }
 
+#ifdef CONFIG_MEMGUARD
+extern int memguard_core_is_throttled(void);
+extern int memguard_process_is_throttled(struct task_struct* p, int core_throttled);
+#endif
+
 /*
  * Preempt the current task with a newly woken task if needed:
  */
@@ -6958,6 +6963,9 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	struct cfs_rq *cfs_rq = task_cfs_rq(curr);
 	int scale = cfs_rq->nr_running >= sched_nr_latency;
 	int next_buddy_marked = 0;
+#ifdef CONFIG_MEMGUARD
+	int core_throttled = 0;
+#endif	
 
 	if (unlikely(se == pse))
 		return;
@@ -7001,6 +7009,22 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	if (unlikely(p->policy != SCHED_NORMAL) || !sched_feat(WAKEUP_PREEMPTION))
 		return;
 
+#ifdef CONFIG_MEMGUARD
+	core_throttled = memguard_core_is_throttled();
+	if (memguard_process_is_throttled(p, core_throttled))
+	{
+		// if new process is throttled, do not preempt
+		return;
+	}
+
+	// this part causes crashes!
+	if (memguard_process_is_throttled(curr, core_throttled))
+	{
+		// if current task is throttled, then preempt
+		goto preempt;
+	}
+#endif
+
 	find_matching_se(&se, &pse);
 	update_curr(cfs_rq_of(se));
 	BUG_ON(!pse);
@@ -7040,6 +7064,10 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf
 	struct cfs_rq *cfs_rq = &rq->cfs;
 	struct sched_entity *se;
 	struct task_struct *p;
+#ifdef CONFIG_MEMGUARD
+	struct task_struct *pcurr;
+	int core_throttled;
+#endif	
 	int new_tasks;
 
 again:
@@ -7057,6 +7085,10 @@ again:
 	 * Therefore attempt to avoid putting and setting the entire cgroup
 	 * hierarchy, only change the part that actually changes.
 	 */
+
+#ifdef CONFIG_MEMGUARD
+	core_throttled = memguard_core_is_throttled();
+#endif
 
 	do {
 		struct sched_entity *curr = cfs_rq->curr;
@@ -7079,7 +7111,13 @@ again:
 			 * Therefore the nr_running test will indeed
 			 * be correct.
 			 */
+#ifdef CONFIG_MEMGUARD
+			// Ok con questo (andato 3 giorni) fino al 15/06
+			pcurr = task_of(curr);
+			if (unlikely(check_cfs_rq_runtime(cfs_rq)) && (!memguard_process_is_throttled(pcurr, core_throttled))) {
+#else
 			if (unlikely(check_cfs_rq_runtime(cfs_rq))) {
+#endif				
 				cfs_rq = &rq->cfs;
 
 				if (!cfs_rq->nr_running)
@@ -7094,6 +7132,12 @@ again:
 	} while (cfs_rq);
 
 	p = task_of(se);
+
+#ifdef CONFIG_MEMGUARD
+	// re-added 15/06, start test in the morning
+	if (memguard_process_is_throttled(p, core_throttled))
+		return NULL;
+#endif
 
 	/*
 	 * Since we haven't yet done put_prev_entity and if the selected task
