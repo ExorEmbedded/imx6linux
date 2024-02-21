@@ -22,8 +22,10 @@
 #include <dt-bindings/firmware/imx/rsrc.h>
 #include <linux/firmware/imx/sci.h>
 
-#ifdef CONFIG_SOC_IMX6Q
 #define HAVE_AG_RING
+
+#if defined(CONFIG_SOC_IMX6ULL) || defined(CONFIG_SOC_IMX6UL)
+#undef HAVE_AG_RING
 #endif
 
 #ifdef CONFIG_PLXX_MANAGER_DA22
