@@ -4327,7 +4327,9 @@ static const struct file_operations fec_agring_fops = {
 static struct miscdevice fec_agring_miscdev = {
   .minor    = 0,
   .name   = "fec_agr",
-  .fops   = &fec_agring_fops
+  .nodename   = "fec_agr",
+  .fops   = &fec_agring_fops,
+  .mode   = 0666
 };
 
 static int fec_agring_open(struct inode* node, struct file* f)
