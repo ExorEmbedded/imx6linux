@@ -4324,14 +4324,6 @@ static const struct file_operations fec_agring_fops = {
   .mmap    = fec_agring_mmap 
 };
 
-static struct miscdevice fec_agring_miscdev = {
-  .minor    = 0,
-  .name   = "fec_agr",
-  .nodename   = "fec_agr",
-  .fops   = &fec_agring_fops,
-  .mode   = 0666
-};
-
 static int fec_agring_open(struct inode* node, struct file* f)
 {
 	return SUCCESS;
@@ -4345,8 +4337,8 @@ static int fec_agring_close(struct inode* node, struct file* f)
 static long fec_agring_ioctl(struct file* f, unsigned int ioctl_num, unsigned long ioctl_param)
 {
 	struct miscdevice* dev = (struct miscdevice*)f->private_data;
-	struct net_device *ndev = (struct net_device*)dev_get_drvdata(dev->this_device);
-	struct fec_enet_private* fep = netdev_priv(ndev);
+	struct fec_enet_private* fep = (struct fec_enet_private*)container_of(dev, struct fec_enet_private, miscdev);
+	struct net_device *ndev = fep->netdev;
 	unsigned int tx_idx;
 	unsigned int tx_len;
 	unsigned int rx_idx;
@@ -4427,8 +4419,7 @@ static long fec_agring_ioctl(struct file* f, unsigned int ioctl_num, unsigned lo
 static int fec_agring_mmap(struct file* f, struct vm_area_struct* vma)
 {
 	struct miscdevice* dev = (struct miscdevice*)f->private_data;
-	struct net_device *ndev = (struct net_device*)dev_get_drvdata(dev->this_device);
-	struct fec_enet_private* fep = netdev_priv(ndev);
+	struct fec_enet_private* fep = (struct fec_enet_private*)container_of(dev, struct fec_enet_private, miscdev);
 	unsigned long mem_id = vma->vm_pgoff; /* using vm_pgoff as memory id */
 	int rc = -ENODEV;
 
@@ -4570,17 +4561,21 @@ static int fec_enet_init(struct net_device *ndev)
 #ifdef HAVE_AG_RING
 	if (enable_agrings)
 	{
-		res = misc_register(&fec_agring_miscdev);
+	 	fep->miscdev.minor = MISC_DYNAMIC_MINOR;
+		fep->miscdev.name = "fec_agr";
+		fep->miscdev.fops = &fec_agring_fops;
+		fep->miscdev.mode = 0666;
+
+		res = misc_register(&fep->miscdev);
 		fep->agring.inited = (res == 0);
 		
 		if (!res)
 		{
-			dev_set_drvdata(fec_agring_miscdev.this_device, ndev);
 			netdev_info(ndev, "AGRING device registered successfully\n");
 		}
 		else
 		{
-			netdev_err(ndev, "failed to register AGRING device\n");
+			netdev_err(ndev, "failed to register AGRING device (error %d)\n", res);
 		}
 
 		mutex_init(&fep->agring.tx_mutex);
@@ -5089,7 +5084,7 @@ fec_drv_remove(struct platform_device *pdev)
 
 			if (fep->agring.inited)
 			{
-				misc_deregister(&fec_agring_miscdev);
+				misc_deregister(&fep->miscdev);
 			}
 		}
 	#endif	

@@ -32,6 +32,10 @@
 #undef HAVE_AG_RING
 #endif
 
+#ifdef HAVE_AG_RING
+#include <linux/miscdevice.h>
+#endif
+
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
     defined(CONFIG_M520x) || defined(CONFIG_M532x) || defined(CONFIG_ARM) || \
     defined(CONFIG_ARM64) || defined(CONFIG_COMPILE_TEST)
@@ -678,6 +682,8 @@ struct fec_enet_private {
 		u_char* tx_ptr;
 		u_char* rx_ptr;
 	} agring;
+
+	struct miscdevice miscdev;
 #endif	
 	u64 ethtool_stats[];
 };
