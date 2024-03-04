@@ -116,6 +116,8 @@
  *1.53          GP                          14.12.2023  Modified display code #87 to use same timings of #86, since they use the same controller chip.
  *                                                      Modified display code #56 to use different hfp value with imx8mm, to get proper timings with the sn65dsi8x mipi2lvds bridge.
  *1.54          GP                          09.01.2024  Added display code #91: Futurelabs FLC-101HMLG200002#00 for eX710
+ *1.55          GP                          30.01.2024  Updated max duty value for display codes 87, 88, 89, (eSMARt02 5, 7, 10"") according to updated specs.
+ *1.56			GP							04.03.2024	Changed pwm dimm. parameters for display code #91 to reach zero-dimming.
  *
  * NEXT AVAILABLE DISPLAY CODE: 92
  */
@@ -1525,7 +1527,7 @@ static struct t_DisplayParams displayconfig[] = {
         
         .pwmfreq        = 5000,				//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.
         .brightness_min = 0x6300,		 //min duty cycle 0.99% 
-        .brightness_max = 100,
+        .brightness_max = 70,
     },   
     /* 88: YES YTC700TLBF-13-200C-V1 for eSMART02-7" 1024x600*/
     {
@@ -1551,7 +1553,7 @@ static struct t_DisplayParams displayconfig[] = {
         
         .pwmfreq        = 5000,				//Backlight controller is TPS61500PWPR, analog mode. 5Khz is TI suggested freq. for 1uF Cdimc value.
         .brightness_min = 0x6300,		 //min duty cycle 0.99% 
-        .brightness_max = 100,
+        .brightness_max = 70,
     },   
     /* 89: YES YTC500RLBH-42-200C for eSMART02-5" 800x480 */
     {
@@ -1577,7 +1579,7 @@ static struct t_DisplayParams displayconfig[] = {
       
       .pwmfreq        = 6500,			//27.09.2022 keyboard led dimming driven by TPS61165 (avoid EasyScale min freq)
       .brightness_min = 0x6300,		 //min duty cycle 0.99%
-      .brightness_max = 60,
+      .brightness_max = 70,
     },   
     /* 90: Innolux G156HCE-LN1 DUAL LVDS 24 bit 1920x1080 eSMART02-15"*/
     {
@@ -1627,9 +1629,14 @@ static struct t_DisplayParams displayconfig[] = {
 
         .blank_inv      = 0,
 
-        .pwmfreq        = 200,
-        .brightness_min = 0x6300,		 //min duty cycle 0.99%
+        .pwmfreq        = 200,          //LT3754
+#ifdef CONFIG_SOC_IMX6Q
+        .brightness_min = 0x1900,		//min duty 0,25%
         .brightness_max = 100,
+#else
+        .brightness_min = 0x0a00,       //min duty 0,10% on US04 (no gamma correction)
+        .brightness_max = 100,          //max duty 100% on US04
+#endif
     },
     /* END OF LIST */
     {
