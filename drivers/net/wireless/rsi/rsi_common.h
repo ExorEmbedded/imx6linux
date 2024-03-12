@@ -20,7 +20,10 @@
 #include <linux/kthread.h>
 
 #define EVENT_WAIT_FOREVER              0
-#define FIRMWARE_RSI9113                "rs9113_wlan_qspi.rps"
+
+//Modification to keep the same firmware that was used before (on BSP with kernel 4.14)
+#define FIRMWARE_RSI9113		"RS9113_WLAN_QSPI.rps"
+
 #define QUEUE_NOT_FULL                  1
 #define QUEUE_FULL                      0
 

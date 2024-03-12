@@ -24,7 +24,8 @@
 /* FLASH Firmware */
 static struct ta_metadata metadata_flash_content[] = {
 	{"flash_content", 0x00010000},
-	{"rsi/rs9113_wlan_qspi.rps", 0x00010000},
+	//use same firmware as Kernel 4.14 (filename has upper caps)
+	{"rsi/RS9113_WLAN_QSPI.rps", 0x00010000},
 	{"rsi/rs9113_wlan_bt_dual_mode.rps", 0x00010000},
 	{"flash_content", 0x00010000},
 	{"rsi/rs9113_ap_bt_dual_mode.rps", 0x00010000},
