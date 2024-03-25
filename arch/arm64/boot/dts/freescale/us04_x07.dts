@@ -349,6 +349,11 @@
 	status = "okay";
 };
 
+/* SD-card */
+&usdhc2 {
+	wp-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
+};
+
 &iomuxc {
 	imx8mm-evk {
 
@@ -456,7 +461,14 @@
 				MX8MM_IOMUXC_GPIO1_IO01_GPIO1_IO1   0x11
 				MX8MM_IOMUXC_GPIO1_IO00_GPIO1_IO0   0x11
 			>;
-		};		
+		};
+
+		pinctrl_usdhc2_gpio: usdhc2grpgpio {
+			fsl,pins = <
+				MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12  0x41
+				MX8MM_IOMUXC_SD2_WP_GPIO2_IO20    0x41
+			>;
+		};
 	};
 };
 
