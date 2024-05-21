@@ -1,4 +1,3 @@
-#error CVE-2024-23851
 /*
  * Internal header file _only_ for device mapper core
  *
@@ -20,6 +19,8 @@
 #include "dm.h"
 
 #define DM_RESERVED_MAX_IOS		1024
+#define DM_MAX_TARGETS			1048576
+#define DM_MAX_TARGET_PARAMS		1024
 
 struct dm_kobject_holder {
 	struct kobject kobj;
