@@ -4986,6 +4986,19 @@ fec_probe(struct platform_device *pdev)
 		}
 		else
 		{
+			#ifdef HAVE_AG_RING
+				if (enable_agrings)
+				{
+					if (atomic_read(&fep->agring.usage_counter) > 0)
+						fec_agring_deallocate_buffers(fep);
+
+					if (fep->agring.inited)
+					{
+						misc_deregister(&fep->miscdev);
+					}
+				}
+			#endif
+
 			ret = -EPROBE_DEFER;
 			goto failed_register;
 		}
