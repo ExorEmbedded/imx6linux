@@ -117,7 +117,6 @@
  *                                                      Modified display code #56 to use different hfp value with imx8mm, to get proper timings with the sn65dsi8x mipi2lvds bridge.
  *1.54          GP                          09.01.2024  Added display code #91: Futurelabs FLC-101HMLG200002#00 for eX710
  *1.55          GP                          30.01.2024  Updated max duty value for display codes 87, 88, 89, (eSMARt02 5, 7, 10"") according to updated specs.
- *1.56			GP							04.03.2024	Changed pwm dimm. parameters for display code #91 to reach zero-dimming.
  *
  * NEXT AVAILABLE DISPLAY CODE: 92
  */
@@ -1633,14 +1632,9 @@ static struct t_DisplayParams displayconfig[] = {
 
         .blank_inv      = 0,
 
-        .pwmfreq        = 200,          //LT3754
-#ifdef CONFIG_SOC_IMX6Q
-        .brightness_min = 0x1900,		//min duty 0,25%
+        .pwmfreq        = 200,
+        .brightness_min = 0x6300,		//min duty 0,99%
         .brightness_max = 100,
-#else
-        .brightness_min = 0x0a00,       //min duty 0,10% on US04 (no gamma correction)
-        .brightness_max = 100,          //max duty 100% on US04
-#endif
     },
     /* END OF LIST */
     {
