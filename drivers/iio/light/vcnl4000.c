@@ -101,7 +101,10 @@ static const int vcnl4010_prox_sampling_frequency[][2] = {
 	{250, 0},
 };
 
-#define VCNL4000_SLEEP_DELAY_MS	2000 /* before we enter pm_runtime_suspend */
+
+// BSP-5796 Exor: patched so that 0 is returned only after 1 minute inactivity
+//#define VCNL4000_SLEEP_DELAY_MS	2000 /* before we enter pm_runtime_suspend */
+#define VCNL4000_SLEEP_DELAY_MS	60000 /* before we enter pm_runtime_suspend */
 
 enum vcnl4000_device_ids {
 	VCNL4000,
