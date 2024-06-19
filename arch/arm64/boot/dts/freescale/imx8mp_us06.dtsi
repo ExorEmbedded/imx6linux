@@ -459,6 +459,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog>;
 
+	imx8mm-evk {
+
 	pinctrl_hog: hoggrp {
 		fsl,pins = <
 			MX8MP_IOMUXC_HDMI_DDC_SCL__HDMIMIX_HDMI_SCL	0x400001c3
@@ -611,6 +613,7 @@
 		fsl,pins = <
 			MX8MP_IOMUXC_GPIO1_IO02__WDOG1_WDOG_B	0xc6
 		>;
+	};
 	};
 };
 

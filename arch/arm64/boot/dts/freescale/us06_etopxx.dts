@@ -1,0 +1,99 @@
+/*
+ * Copyright (C) 2024 Exor Int.
+ * 
+ * Written by: G. Pavoni Exor Int.
+ * 
+ * Copyright (C) 2013 Freescale Semiconductor, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+  
+/dts-v1/;
+  
+#include "imx8mp_us06.dtsi"
+  
+/ {
+	model = "eTOPxx i.MX8MP US06 board";
+
+	aliases {
+		serial0 = &uart1;
+	};
+};
+
+&eqos {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_eqos>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&ethphy0>;
+	status = "okay";
+
+	mdio {
+		compatible = "snps,dwmac-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy0: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+			eee-broken-1000t;
+		};
+	};
+};
+
+&ecspi2 {
+	/delete-property/dmas;
+	/delete-property/dma-names;
+};
+
+&i2c1 {
+    seepromadp:seeprom0@56 {
+        compatible = "atmel,24c02";
+        reg = <0x56>;
+    };
+};
+
+&pcie{
+	fsl,max-link-speed = <1>;
+};
+
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	imx8mp-evk {
+
+		pinctrl_eqos: eqosgrp {
+			fsl,pins = <
+				MX8MP_IOMUXC_ENET_MDC__ENET_QOS_MDC		0x3
+				MX8MP_IOMUXC_ENET_MDIO__ENET_QOS_MDIO		0x3
+				MX8MP_IOMUXC_ENET_RD0__ENET_QOS_RGMII_RD0	0x91
+				MX8MP_IOMUXC_ENET_RD1__ENET_QOS_RGMII_RD1	0x91
+				MX8MP_IOMUXC_ENET_RD2__ENET_QOS_RGMII_RD2	0x91
+				MX8MP_IOMUXC_ENET_RD3__ENET_QOS_RGMII_RD3	0x91
+				MX8MP_IOMUXC_ENET_RXC__CCM_ENET_QOS_CLOCK_GENERATE_RX_CLK	0x91
+				MX8MP_IOMUXC_ENET_RX_CTL__ENET_QOS_RGMII_RX_CTL	0x91
+				MX8MP_IOMUXC_ENET_TD0__ENET_QOS_RGMII_TD0	0x1f
+				MX8MP_IOMUXC_ENET_TD1__ENET_QOS_RGMII_TD1	0x1f
+				MX8MP_IOMUXC_ENET_TD2__ENET_QOS_RGMII_TD2	0x1f
+				MX8MP_IOMUXC_ENET_TD3__ENET_QOS_RGMII_TD3	0x1f
+				MX8MP_IOMUXC_ENET_TX_CTL__ENET_QOS_RGMII_TX_CTL	0x1f
+				MX8MP_IOMUXC_ENET_TXC__CCM_ENET_QOS_CLOCK_GENERATE_TX_CLK	0x1f
+			>;
+		};
+
+	};
+};
+
+
+
+
+
+
+
+
+
+
+
