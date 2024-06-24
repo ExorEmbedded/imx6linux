@@ -73,6 +73,11 @@
 		regulator-max-microvolt = <3300000>;
 	};
 
+	beeper {
+		compatible = "pwm-beeper";
+		pwms = <&pwm2 0 50000 0>;
+	};
+
 };
 
 &A53_0 {
