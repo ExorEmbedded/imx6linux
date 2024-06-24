@@ -30,11 +30,23 @@
 		status = "okay";
 	};
 
+	reg_lvdspanel: regulator-lvdspanel {
+		compatible = "regulator-fixed";
+		regulator-name = "lvds-reg";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		gpio = <&pca9534_0 1 0>;
+		startup-delay-us = <100000>;
+		enable-active-high;
+	};
+
 	lvdspanel {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "ex,lvds-panel", "simple-panel";
 		backlight = <&backlight0>;
+		power-supply = <&reg_lvdspanel>;
 
 		status = "okay";
 
@@ -100,7 +112,7 @@
 	status = "okay";
 
 	lvds-channel@0 {
-		fsl,data-mapping = "jeida";
+		fsl,data-mapping = "spwg";
 		fsl,data-width = <24>;
 		status = "okay";
 
