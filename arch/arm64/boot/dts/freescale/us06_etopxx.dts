@@ -20,6 +20,50 @@
 	aliases {
 		serial0 = &uart1;
 	};
+
+	backlight0: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm4 0 50000 0>;
+		brightness-levels = <0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100>;
+		default-brightness-level = <0>;
+		enable-gpios = <&pca9534_0 2 0>;
+		status = "okay";
+	};
+
+	lvdspanel {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "ex,lvds-panel", "simple-panel";
+		backlight = <&backlight0>;
+
+		status = "okay";
+
+		de_pol = <1>;
+		hsync_pol = <1>;
+		vsync_pol = <1>;
+		lvds-use-jeida;
+		panel-timing {
+			clock-frequency = <33200000>;
+			hactive = <800>;
+			vactive = <480>;
+			hsync-len = <200>;
+			hfront-porch = <28>;
+			hback-porch = <28>;
+			vsync-len = <25>;
+			vfront-porch = <10>;
+			vback-porch = <10>;
+		};
+
+		port@0 {
+			reg = <0>;
+
+			panel_in: endpoint {
+				remote-endpoint = <&lvds_out>;
+			};
+		};
+	};
+
+
 };
 
 &eqos {
@@ -40,6 +84,38 @@
 			eee-broken-1000t;
 		};
 	};
+};
+
+/* LVDS */
+&lcdif2 {
+	status = "okay";
+};
+
+/* PWM dimming */
+&pwm4 {
+	status = "okay";
+};
+
+&ldb {
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "jeida";
+		fsl,data-width = <24>;
+		status = "okay";
+
+		port@1 {
+			reg = <1>;
+
+			lvds_out: endpoint {
+				remote-endpoint = <&panel_in>;
+			};
+		};
+	};
+};
+
+&ldb_phy {
+	status = "okay";
 };
 
 &ecspi2 {
@@ -86,14 +162,4 @@
 
 	};
 };
-
-
-
-
-
-
-
-
-
-
 

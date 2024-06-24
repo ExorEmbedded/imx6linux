@@ -191,6 +191,17 @@ int ldb_bind(struct ldb *ldb, struct drm_encoder **encoder)
 		pm_runtime_put(dev);
 
 	ldb->dual = of_property_read_bool(np, "fsl,dual-channel");
+#ifdef CONFIG_DRM_IMX8MP_LDB
+#ifdef CONFIG_DRM_TI_SN65DSI83
+	/* If we are taking the imx8mp LVDS display parameters from the displayconfig.h, handle the dual LVDS flag accordingly */
+	if(!ldb->dual)
+	{
+		extern int volatile f_sn65dsi84_dual_lvds;
+		if(f_sn65dsi84_dual_lvds)
+			ldb->dual = true;
+	}
+#endif
+#endif
 	if (ldb->dual)
 		ldb->ldb_ctrl |= LDB_SPLIT_MODE_EN;
 

@@ -173,6 +173,11 @@ imx8mp_ldb_encoder_atomic_check(struct drm_encoder *encoder,
 	struct drm_display_info *di = &conn_state->connector->display_info;
 	struct drm_display_mode *mode = &crtc_state->adjusted_mode;
 	u32 bus_format = ldb_ch->bus_format;
+	int in_freq, n;
+	int min_err = 100000;
+	int best_lvds_pclk = 0;
+	struct clk* media_ldb_clk;
+	struct clk* video_pll1;
 
 	/* Bus format description in DT overrides connector display info. */
 	if (!bus_format && di->num_bus_formats) {
@@ -197,11 +202,42 @@ imx8mp_ldb_encoder_atomic_check(struct drm_encoder *encoder,
 	/*
 	 * Due to limited video PLL frequency points on i.MX8mp,
 	 * we do mode fixup here in case any mode is unsupported.
+	 * We choose the nearest LVDS clock frequency which can be
+	 * obtained by integer division from the IMX8MP_VIDEO_PLL1
+	 * input clock, which is defined in dtb.
 	 */
-	if (ldb->dual)
-		mode->clock = mode->clock > 100000 ? 148500 : 74250;
-	else
-		mode->clock = 74250;
+
+	/* 1: Get the parent clock (VIDEO_PLL1) and its frequency value */
+	media_ldb_clk = clk_get_parent(imx8mp_ldb->clk_root);
+	if(!media_ldb_clk)
+	{
+		printk("%s: Unable to get parent clock: media_ldb_clk\n", __func__);
+		return -EINVAL;
+	}
+
+
+	video_pll1 = clk_get_parent(media_ldb_clk);
+	if(!video_pll1)
+	{
+		printk("%s: Unable to get parent clock: video_pll1\n", __func__);
+		return -EINVAL;
+	}
+
+	in_freq = clk_get_rate(video_pll1) / 1000;
+
+	/* Find the LVDS clock best match, which minimizes the delta freq */
+	for(n=0; n<6; n++)
+	{
+		int err = abs((in_freq/(7*n)) - mode->clock);
+		if(err < min_err)
+		{
+			min_err = err;
+			best_lvds_pclk = in_freq/(7*n);
+		}
+	}
+
+	printk("%s mode->clock=%d<-%dKhz ldb->dual=%d video_pll1=%dKhz", __func__, mode->clock, best_lvds_pclk, ldb->dual, in_freq);
+	mode->clock = best_lvds_pclk;
 
 	return 0;
 }
@@ -219,16 +255,6 @@ imx8mp_ldb_encoder_mode_valid(struct drm_encoder *encoder,
 	/* it should be okay with a panel */
 	if (ldb_ch->panel)
 		return MODE_OK;
-
-	/*
-	 * Due to limited video PLL frequency points on i.MX8mp,
-	 * we do mode valid check here.
-	 */
-	if (ldb->dual && mode->clock != 74250 && mode->clock != 148500)
-		return MODE_NOCLOCK;
-
-	if (!ldb->dual && mode->clock != 74250)
-		return MODE_NOCLOCK;
 
 	return MODE_OK;
 }
