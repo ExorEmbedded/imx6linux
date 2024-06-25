@@ -30,6 +30,50 @@
 		status = "okay";
 	};
 
+	working_hours {
+	  compatible = "working_hours";
+	  nvmem-names = "eeprom";
+	  nvmem = <&seeprom0>;
+	  has-blight;
+	  status = "okay";
+	};
+
+	plxx0: plugin0 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio5 5 0>;
+	  index = <0>;
+	  status = "okay";
+	};
+
+	plxx1: plugin1 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio5 28 0>;
+	  index = <1>;
+	  status = "okay";
+	};
+
+	plxx2: plugin2 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio1 3 0>;
+	  index = <2>;
+	  status = "okay";
+	};
+
+	plxx3: plugin3 {
+	  compatible = "exor,plxx_manager";
+	  nvmem-names = "eeprom", "ioexp";
+	  nvmem = <&plxxseeprom>, <&plxxioexp>;
+	  sel-gpio = <&gpio3 21 0>;
+	  index = <3>;
+	  status = "okay";
+	};
+
 	reg_lvdspanel: regulator-lvdspanel {
 		compatible = "regulator-fixed";
 		regulator-name = "lvds-reg";
@@ -140,6 +184,16 @@
         compatible = "atmel,24c02";
         reg = <0x56>;
     };
+
+	plxxseeprom:seeprom1@57 {
+		compatible = "atmel,24c02";
+		reg = <0x57>;
+	};
+
+	plxxioexp:ioexp1@41 {
+		compatible = "atmel,24c02";
+		reg = <0x41>;
+	};
 };
 
 &pcie{
@@ -149,9 +203,18 @@
 
 &iomuxc {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hog>;
+	pinctrl-0 = <&pinctrl_hog &pinctrl_hog2>;
 
 	imx8mp-evk {
+
+		pinctrl_hog2: hoggrp-2 {
+			fsl,pins = <
+				MX8MP_IOMUXC_SPDIF_EXT_CLK__GPIO5_IO05      0x106
+				MX8MP_IOMUXC_SPDIF_EXT_CLK__GPIO5_IO05      0x106
+				MX8MP_IOMUXC_GPIO1_IO03__GPIO1_IO03      0x106
+				MX8MP_IOMUXC_SAI5_RXD0__GPIO3_IO21       0x106
+			>;
+		};
 
 		pinctrl_eqos: eqosgrp {
 			fsl,pins = <
