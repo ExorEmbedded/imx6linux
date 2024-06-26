@@ -89,7 +89,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "ex,lvds-panel", "simple-panel";
-		backlight = <&backlight0>;
 		power-supply = <&reg_lvdspanel>;
 
 		status = "okay";
