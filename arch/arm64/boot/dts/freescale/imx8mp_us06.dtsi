@@ -22,9 +22,9 @@
 		can1 = &flexcan2;
 	};
 
-	chosen {
-		stdout-path = &uart1;
-	};
+//	chosen {
+//		stdout-path = &uart1;
+//	};
 
 	gpio-leds {
 

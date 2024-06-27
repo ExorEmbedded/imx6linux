@@ -209,6 +209,18 @@
 	status = "okay";
 };
 
+&uart1 { /* Main UART */
+	/delete-property/dmas;
+	/delete-property/dma-names;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>;
+	fsl,uart-has-rtscts;
+	rts-gpio = <&gpio4 14 0>;
+	mode-gpio = <&gpio4 9 0>;
+	rxen-gpio = <&gpio4 8 0>;
+	status = "okay";
+};
+
 &uart2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart2>;
@@ -283,6 +295,18 @@
 				MX8MP_IOMUXC_ECSPI2_MOSI__UART4_DCE_TX		0x140
 				MX8MP_IOMUXC_ECSPI2_MISO__UART4_DCE_CTS		0x140
 				MX8MP_IOMUXC_ECSPI2_SS0__UART4_DCE_RTS		0x140
+			>;
+		};
+
+		pinctrl_uart1: uart1grp {
+			fsl,pins = <
+				MX8MP_IOMUXC_UART1_RXD__UART1_DCE_RX		0x140
+				MX8MP_IOMUXC_UART1_TXD__UART1_DCE_TX		0x140
+				MX8MP_IOMUXC_SAI2_RXD0__UART1_DCE_RTS		0x140
+				MX8MP_IOMUXC_SAI2_TXFS__UART1_DCE_CTS		0x140
+				MX8MP_IOMUXC_SAI1_RXD7__GPIO4_IO09			0x106
+				MX8MP_IOMUXC_SAI1_TXD2__GPIO4_IO14			0x106
+				MX8MP_IOMUXC_SAI1_RXD6__GPIO4_IO08			0x106
 			>;
 		};
 
