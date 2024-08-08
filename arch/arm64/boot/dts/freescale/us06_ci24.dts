@@ -18,6 +18,8 @@
 	model = "CI24 US06 board";
 
 	aliases {
+		ethernet1 = &fec;
+		ethernet0 = &eqos;
 		serial0 = &uart1;
 		serial1 = &uart2;
 		serial2 = &uart4;
@@ -114,7 +116,9 @@
 
 		ethphy0: ethernet-phy@3 {
 			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <1>;
+			reg = <0x01>;
+			ti,rx-internal-delay = <0x07>;
+			ti,tx-internal-delay = <0x07>;
 			eee-broken-1000t;
 		};
 	};
