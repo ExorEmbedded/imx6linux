@@ -486,7 +486,14 @@ iwl_mvm_update_mcc(struct iwl_mvm *mvm, const char *alpha2,
 		return ERR_PTR(-EOPNOTSUPP);
 
 	cmd.len[0] = sizeof(struct iwl_mcc_update_cmd);
-
+			
+	// DJ002 SoftAP-5GHz - start
+	if (src_id == MCC_SOURCE_MCC_API)  
+ 	{
+		mcc_update_cmd.key = cpu_to_le32(0xDEADBEE1);
+	}
+	// DJ002 SoftAP-5GHz - end	
+		
 	IWL_DEBUG_LAR(mvm, "send MCC update to FW with '%c%c' src = %d\n",
 		      alpha2[0], alpha2[1], src_id);
 
@@ -573,16 +580,20 @@ int iwl_mvm_init_mcc(struct iwl_mvm *mvm)
 	if (!iwl_mvm_is_lar_supported(mvm))
 		return 0;
 
+
 	/*
 	 * try to replay the last set MCC to FW. If it doesn't exist,
 	 * queue an update to cfg80211 to retrieve the default alpha2 from FW.
 	 */
-	retval = iwl_mvm_init_fw_regd(mvm);
-	if (retval != -ENOENT)
-		return retval;
+	 
+	retval = iwl_mvm_init_fw_regd(mvm); 
+	
+	//LR004 remove next check, so regulatory domain is copied from cfg80211_regdom each time wlan0 is set up (not only first)
+	//if (retval != -ENOENT) // retval is set to -ENOENT only first time that wlan0 is set up
+ 	//	 return retval; 
 
 	/*
-	 * Driver regulatory hint for initial update, this also informs the
+	 * Driver regulatory hint for **each time wlan0 is set UP** (see comment above), this also informs the
 	 * firmware we support wifi location updates.
 	 * Disallow scans that might crash the FW while the LAR regdomain
 	 * is not set.

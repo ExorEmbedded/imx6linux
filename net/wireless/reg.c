@@ -4106,6 +4106,30 @@ bool regulatory_pre_cac_allowed(struct wiphy *wiphy)
 }
 EXPORT_SYMBOL(regulatory_pre_cac_allowed);
 
+
+void read_alpha2_from_cfg80211_regdomain(char *alpha2Read) //MOD LR002 new function to read regulatory domain country name
+{
+    const struct ieee80211_regdomain *regd;
+
+    // Start RCU critical session
+    rcu_read_lock();
+
+    // Dereference RCU protected pointer 
+    regd = rcu_dereference(cfg80211_regdomain);
+
+    // Now regd can be safely read
+    if (regd) {             
+        alpha2Read[0]=regd->alpha2[0];
+        alpha2Read[1]=regd->alpha2[1];
+        alpha2Read[2]='\0';          
+    }
+
+    // terminate RCU critical session
+    rcu_read_unlock();
+}
+EXPORT_SYMBOL(read_alpha2_from_cfg80211_regdomain);
+//MOD LR002 --end
+
 static void cfg80211_check_and_end_cac(struct cfg80211_registered_device *rdev)
 {
 	struct wireless_dev *wdev;

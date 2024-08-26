@@ -302,6 +302,17 @@ void iwl_mvm_update_changed_regdom(struct iwl_mvm *mvm)
 struct ieee80211_regdomain *iwl_mvm_get_current_regdomain(struct iwl_mvm *mvm,
 							  bool *changed)
 {
+	char copyOfRegdomAlpha2[3] = "XY"; //3rd char is '\0'
+	
+	//LR001 get global regulatory county ID
+	read_alpha2_from_cfg80211_regdomain(copyOfRegdomAlpha2); 
+
+	//DJ001 SoftAP-5GHz
+	iwl_mvm_get_regdomain( mvm->hw->wiphy,  
+				copyOfRegdomAlpha2, 
+				MCC_SOURCE_MCC_API,  
+				changed); 
+
 	return iwl_mvm_get_regdomain(mvm->hw->wiphy, "ZZ",
 				     iwl_mvm_is_wifi_mcc_supported(mvm) ?
 				     MCC_SOURCE_GET_CURRENT :

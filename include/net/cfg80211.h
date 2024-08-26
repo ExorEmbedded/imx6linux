@@ -5992,6 +5992,12 @@ const char *reg_initiator_name(enum nl80211_reg_initiator initiator);
  */
 bool regulatory_pre_cac_allowed(struct wiphy *wiphy);
 
+/*
+* LR003 get country code (alpha2 format) from global regulatory infos
+*/
+void read_alpha2_from_cfg80211_regdomain(char *alpha2Read); //MOD LR003
+
+
 /**
  * DOC: Internal regulatory db functions
  *
