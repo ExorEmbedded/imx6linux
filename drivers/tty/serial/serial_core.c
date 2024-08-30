@@ -2566,6 +2566,11 @@ int uart_register_driver(struct uart_driver *drv)
 	normal->init_termios	= tty_std_termios;
 	normal->init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
 	normal->init_termios.c_ispeed = normal->init_termios.c_ospeed = 9600;
+#ifdef CONFIG_PLXX_MANAGER_DA22
+	normal->init_termios.c_lflag = 0; //Disable echo and special chars handling by default
+	normal->init_termios.c_iflag = 0;
+	normal->init_termios.c_oflag = 0;
+#endif
 	normal->flags		= TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
 	normal->driver_state    = drv;
 	tty_set_operations(normal, &uart_ops);
