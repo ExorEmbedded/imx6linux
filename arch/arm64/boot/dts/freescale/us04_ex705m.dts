@@ -134,7 +134,7 @@
 		ethphy0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			max-speed = <100>;
-			reg = <1>;
+			reg = <0>;
 		};
 	};
 };
@@ -170,10 +170,6 @@
 	plugin2 = <&plxx1>;
 	/delete-property/dmas;
 	/delete-property/dma-names;
-};
-
-&dsi_lvds_bridge {
-	ti,lvds-format = <1>;
 };
 
 &iomuxc {

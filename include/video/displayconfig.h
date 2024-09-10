@@ -1009,18 +1009,24 @@ static struct t_DisplayParams displayconfig[] = {
         .rezx      = 800, 
         .rezy      = 480, 
         .bpp       = 16,
+#ifdef CONFIG_SOC_IMX6Q
+        .pclk_freq = 27000,
+        .pclk_inv  = 0,
         
-        .pclk_freq = 27000, 
-        .pclk_inv  = 0,           
-        
-        .hs_fp     = 16, 
+        .hs_fp     = 16,
+#else
+        .pclk_freq = 30000, /* BSP-2900: need to adjust values to get the MIPI2LVDS converter to produce valid timings */
+        .pclk_inv  = 0,
+
+        .hs_fp     = 12,
+#endif
         .hs_bp     = 46, 
-        .hs_w      = 1, 
+        .hs_w      = 1,
         .hs_inv    = 0,
         
-        .vs_fp     = 7, 
+        .vs_fp     = 7,
         .vs_bp     = 23, 
-        .vs_w      = 1, 
+        .vs_w      = 1,
         .vs_inv    = 0,
         
         .blank_inv      = 0,
