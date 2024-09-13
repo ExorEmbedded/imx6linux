@@ -26,12 +26,29 @@
 		serial3 = &uart3;
 	};
 
+	sn65dsi86_refclk: sn65dsi86-refclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <27000000>;
+	};
+
+	/* LVDS backlight */
 	backlight0: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm4 0 50000 0>;
 		brightness-levels = <0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100>;
 		default-brightness-level = <0>;
 		enable-gpios = <&pca9534_0 2 0>;
+		status = "disabled"; /* NOTE: To be enabled for LVDS display output */
+	};
+
+	/* MIPI/eDP backight */
+	edp_backlight: backlight_edp {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 500000 0>;
+		brightness-levels = <0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100>;
+		default-brightness-level = <0>;
+		enable-gpios = <&pca9534_0 5 0>;
 		status = "okay";
 	};
 
@@ -54,13 +71,25 @@
 		enable-active-high;
 	};
 
+	reg_edppanel: regulator-edppanel {
+		compatible = "regulator-fixed";
+		regulator-name = "lvds-reg";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		gpio = <&gpio3 14 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <100000>;
+		enable-active-high;
+	};
+
+	/* LVDS panel */
 	lvdspanel {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "ex,lvds-panel", "simple-panel";
 		power-supply = <&reg_lvdspanel>;
 
-		status = "okay";
+		status = "disabled"; /* NOTE: To be enabled for LVDS display output */
 
 		de_pol = <1>;
 		hsync_pol = <1>;
@@ -83,6 +112,22 @@
 
 			panel_in: endpoint {
 				remote-endpoint = <&lvds_out>;
+			};
+		};
+	};
+
+	/* mipi/eDP panel */
+	edppanel {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "boe,nv133fhm-n61","panel-simple";
+		status = "okay";
+		power-supply = <&reg_edppanel>;
+		dsi-lanes = <4>;
+		port@0 {
+			reg = <0>;
+			panel_in_edp: endpoint {
+				remote-endpoint = <&sn65dsi86_out>;
 			};
 		};
 	};
@@ -124,18 +169,31 @@
 	};
 };
 
-/* LVDS */
+/* MIPI/eDP interface */
+&lcdif1 {
+	status = "okay";
+};
+
+/* LVDS interface */
 &lcdif2 {
-	status = "okay";
+	status = "disabled"; /* NOTE: To be enabled for LVDS display output */
 };
 
-/* PWM dimming */
+/* LVDS display PWM backlight dimming*/
 &pwm4 {
+	status = "disabled"; /* NOTE: To be enabled for LVDS display output */
+};
+
+/* MIPI/eDP display PWM backlight dimming */
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm1>;
 	status = "okay";
 };
 
+/* LVDS display */
 &ldb {
-	status = "okay";
+	status = "disabled"; /* NOTE: To be enabled for LVDS display output */
 
 	lvds-channel@0 {
 		fsl,data-mapping = "spwg";
@@ -152,8 +210,20 @@
 	};
 };
 
+/* LVDS display */
 &ldb_phy {
+	status = "disabled"; /* NOTE: To be enabled for LVDS display output */
+};
+
+/* MIPI/eDP mipi DSI */
+&mipi_dsi {
 	status = "okay";
+		port@1 {
+			dsim_to_sn65: endpoint {
+				remote-endpoint = <&sn65dsi86_in>;
+				attach-bridge;
+			};
+		};
 };
 
 &ecspi2 {
@@ -168,13 +238,56 @@
 	};
 };
 
+&i2c2 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default", "gpio";
+	pinctrl-0 = <&pinctrl_i2c2>;
+	pinctrl-1 = <&pinctrl_i2c2_gpio>;
+	scl-gpios = <&gpio5 16 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio5 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	status = "okay";
+
+	/* SN65DSI86 MIPI2EDP bridge */
+	sn65dsi86_bridge: bridge@2c {
+		compatible = "ti,sn65dsi86";
+		reg = <0x2c>;
+		ti,dsi-lanes = <4>;
+		max,dsi-channel = <1>;
+		ti,dp-lanes = <2>;
+
+		enable-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		clocks = <&sn65dsi86_refclk>;
+		clock-names = "refclk";
+		no-hpd;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				sn65dsi86_in: endpoint {
+					remote-endpoint = <&dsim_to_sn65>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				sn65dsi86_out: endpoint {
+					remote-endpoint = <&panel_in_edp>;
+				};
+			};
+        };
+	};
+};
+
 &i2c6 {
 	clock-frequency = <100000>;
 	pinctrl-names = "default", "gpio";
 	pinctrl-0 = <&pinctrl_i2c6>;
 	pinctrl-1 = <&pinctrl_i2c6_gpio>;
-	scl-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
-	sda-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+	scl-gpios = <&gpio3 19 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio3 20 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 	status = "okay";
 
 	tas5721: audio-codec@1b {
@@ -309,6 +422,8 @@
 				MX8MP_IOMUXC_GPIO1_IO03__GPIO1_IO03      0x106
 				MX8MP_IOMUXC_SAI5_RXD0__GPIO3_IO21       0x106
 				MX8MP_IOMUXC_GPIO1_IO08__GPIO1_IO08      0x106 /* CASE_OPEN GPIO*/
+				MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14        0x106 /* EDP EN_VDD */
+				MX8MP_IOMUXC_NAND_DATA00__GPIO3_IO06     0x106 /* EDP EN_DSI */
 			>;
 		};
 
@@ -366,6 +481,20 @@
 			>;
 		};
 
+		pinctrl_i2c2: i2c2grp {
+			fsl,pins = <
+				MX8MP_IOMUXC_I2C2_SCL__I2C2_SCL		0x400001c2
+				MX8MP_IOMUXC_I2C2_SDA__I2C2_SDA		0x400001c2
+			>;
+		};
+
+		pinctrl_i2c2_gpio: i2c2grpgpio {
+			fsl,pins = <
+				MX8MP_IOMUXC_I2C2_SCL__GPIO5_IO16        0x1c4
+				MX8MP_IOMUXC_I2C2_SDA__GPIO5_IO17        0x1c4
+			>;
+		};
+
 		pinctrl_i2c6: i2c6grp {
 			fsl,pins = <
 				MX8MP_IOMUXC_SAI5_RXFS__I2C6_SCL		0x400001c2
@@ -386,6 +515,12 @@
 				MX8MP_IOMUXC_SAI3_TXC__AUDIOMIX_SAI3_TX_BCLK	0xd6
 				MX8MP_IOMUXC_SAI3_TXFS__AUDIOMIX_SAI3_TX_SYNC	0xd6
 				MX8MP_IOMUXC_SAI3_MCLK__AUDIOMIX_SAI3_MCLK	0xd6
+			>;
+		};
+
+		pinctrl_pwm1: pwm1grp {
+			fsl,pins = <
+				MX8MP_IOMUXC_GPIO1_IO01__PWM1_OUT	0x116
 			>;
 		};
 	};
