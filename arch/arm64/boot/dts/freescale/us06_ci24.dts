@@ -120,10 +120,23 @@
 	edppanel {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "boe,nv133fhm-n61","panel-simple";
+		compatible = "ivo,m133nwf4-r0","panel-simple";
 		status = "okay";
 		power-supply = <&reg_edppanel>;
 		dsi-lanes = <4>;
+
+		panel-timing {
+			clock-frequency = <141000000>;
+			hactive = <1920>;
+			vactive = <1080>;
+			hsync-len = <32>;
+			hfront-porch = <32>;
+			hback-porch = <120>;
+			vsync-len = <10>;
+			vfront-porch = <10>;
+			vback-porch = <36>;
+		};
+
 		port@0 {
 			reg = <0>;
 			panel_in_edp: endpoint {
@@ -167,6 +180,31 @@
 			eee-broken-1000t;
 		};
 	};
+};
+
+/* HDMI native interface */
+&irqsteer_hdmi {
+	status = "okay";
+};
+
+&hdmi_blk_ctrl {
+	status = "okay";
+};
+
+&hdmi_pavi {
+	status = "okay";
+};
+
+&hdmi {
+	status = "okay";
+};
+
+&hdmiphy {
+	status = "okay";
+};
+
+&lcdif3 {
+	status = "okay";
 };
 
 /* MIPI/eDP interface */
@@ -424,6 +462,10 @@
 				MX8MP_IOMUXC_GPIO1_IO08__GPIO1_IO08      0x106 /* CASE_OPEN GPIO*/
 				MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14        0x106 /* EDP EN_VDD */
 				MX8MP_IOMUXC_NAND_DATA00__GPIO3_IO06     0x106 /* EDP EN_DSI */
+				MX8MP_IOMUXC_HDMI_DDC_SCL__HDMIMIX_HDMI_SCL	0x400001c3
+				MX8MP_IOMUXC_HDMI_DDC_SDA__HDMIMIX_HDMI_SDA	0x400001c3
+				MX8MP_IOMUXC_HDMI_HPD__HDMIMIX_HDMI_HPD		0x40000019
+				MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_HDMI_CEC		0x40000019
 			>;
 		};
 
