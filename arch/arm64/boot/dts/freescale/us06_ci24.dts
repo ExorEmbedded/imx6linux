@@ -73,7 +73,7 @@
 
 	reg_edppanel: regulator-edppanel {
 		compatible = "regulator-fixed";
-		regulator-name = "lvds-reg";
+		regulator-name = "edp-reg";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-always-on;
@@ -158,6 +158,14 @@
 			sound-dai = <&tas5721>;
 		};
 	};
+};
+
+&leds{
+        hdmi_oe@11 {
+            label = "hdmi_oe";
+            gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+            default-state = "on";
+        };
 };
 
 &eqos {
@@ -466,6 +474,7 @@
 				MX8MP_IOMUXC_HDMI_DDC_SDA__HDMIMIX_HDMI_SDA	0x400001c3
 				MX8MP_IOMUXC_HDMI_HPD__HDMIMIX_HDMI_HPD		0x40000019
 				MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_HDMI_CEC		0x40000019
+				MX8MP_IOMUXC_NAND_DATA01__GPIO3_IO07    0x106 /* HDMI_OE */
 			>;
 		};
 
