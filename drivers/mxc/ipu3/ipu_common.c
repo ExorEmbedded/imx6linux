@@ -652,7 +652,8 @@ static int ipu_probe(struct platform_device *pdev)
 	if (!bypass_reset)
 		clk_disable(ipu->ipu_clk);
 
-	register_ipu_device(ipu, id);
+	if (id == 0)
+		register_ipu_device(ipu, id);
 
 	pm_runtime_enable(&pdev->dev);
 
@@ -663,7 +664,8 @@ int ipu_remove(struct platform_device *pdev)
 {
 	struct ipu_soc *ipu = platform_get_drvdata(pdev);
 
-	unregister_ipu_device(ipu, ipu->id);
+	if (ipu->id == 0)
+		unregister_ipu_device(ipu, ipu->id);
 
 	clk_put(ipu->ipu_clk);
 
