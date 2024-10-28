@@ -361,11 +361,26 @@ static const struct of_device_id of_pca963x_match[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(of, of_pca963x_match);
+
+static int pca963x_is_wuxx_keep(struct i2c_client *client)
+{
+	struct device_node *np = client->dev.of_node;
+	if (of_property_read_bool(np, "wuxx-keep"))
+		return 1;
+
+	return 0;
+}
+
 #else
 static struct pca963x_platform_data *
 pca963x_dt_init(struct i2c_client *client, struct pca963x_chipdef *chip)
 {
 	return ERR_PTR(-ENODEV);
+}
+
+static int pca963x_is_wuxx_keep(struct i2c_client *client)
+{
+	return 0;
 }
 #endif
 
@@ -377,6 +392,7 @@ static int pca963x_probe(struct i2c_client *client,
 	struct pca963x_platform_data *pdata;
 	struct pca963x_chipdef *chip;
 	int i, err;
+	int f_wuxx_keep=0, red, green, blue; //BSP-6684 wuxx power-on notification stuff
 
 	if (id) {
 		chip = &pca963x_chipdefs[id->driver_data];
@@ -420,6 +436,15 @@ static int pca963x_probe(struct i2c_client *client,
 	pca963x_chip->chipdef = chip;
 	pca963x_chip->client = client;
 	pca963x_chip->leds = pca963x;
+
+	if(pca963x_is_wuxx_keep(client))
+		if(i2c_smbus_read_byte_data(client, chip->ledout_base)==0x2a)
+		{ //BSP-6684: This is a wuxx target, where we need to keep the LED brightness, which was effectively previously set by the bootloader
+			f_wuxx_keep = 1;
+			red = i2c_smbus_read_byte_data(client, PCA963X_PWM_BASE); //Store the dimming values
+			green = i2c_smbus_read_byte_data(client, PCA963X_PWM_BASE+1); //Store the dimming values
+			blue = i2c_smbus_read_byte_data(client, PCA963X_PWM_BASE+2); //Store the dimming values
+		}
 
 	/* Turn off LEDs by default*/
 	for (i = 0; i < chip->n_leds / 4; i++)
@@ -472,6 +497,16 @@ static int pca963x_probe(struct i2c_client *client,
 			mode2 |= PCA963X_MODE2_INVRT;
 		i2c_smbus_write_byte_data(pca963x->chip->client, PCA963X_MODE2,
 					  mode2);
+	}
+
+	if(f_wuxx_keep)
+	{ //BSP-6684: Restore the brightness values to the saved ones
+		pca963x[0].led_cdev.brightness=red;
+		pca963x[1].led_cdev.brightness=green;
+		pca963x[2].led_cdev.brightness=blue;
+		pca963x_led_set(&(pca963x[0].led_cdev), red);
+		pca963x_led_set(&(pca963x[1].led_cdev), green);
+		pca963x_led_set(&(pca963x[2].led_cdev), blue);
 	}
 
 	return 0;

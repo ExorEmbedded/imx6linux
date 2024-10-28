@@ -227,6 +227,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x62>;
+		wuxx-keep;
 		
 		red@0 {
 			label = "red";
