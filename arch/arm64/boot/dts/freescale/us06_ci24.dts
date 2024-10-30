@@ -294,9 +294,9 @@
 	status = "okay";
 
 	/* SN65DSI86 MIPI2EDP bridge */
-	sn65dsi86_bridge: bridge@2c {
+	sn65dsi86_bridge: bridge@2d {
 		compatible = "ti,sn65dsi86";
-		reg = <0x2c>;
+		reg = <0x2d>;
 		ti,dsi-lanes = <4>;
 		max,dsi-channel = <1>;
 		ti,dp-lanes = <2>;
