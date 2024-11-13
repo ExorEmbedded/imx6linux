@@ -46,7 +46,8 @@
 		gpio-activelow;
 		gpio-colactivehigh;
 		engpio = <&gpio4 16 0>;
-		//shutdown-code=<0x003C003F>;	/* KEY_F2 (003C) + KEY_F5 (003F) */
+		shutdown-code1=<0x00200028>;	/* scancode 32,40 (col=0, row=4,5) for X10 */
+		shutdown-code2=<0x0004001C>;	/* scancode 04,28 (col=4, row=0,3) for X07 */
 		shutdown-count=<70>;		/* 70 * 70mS = 5 secs */
 		status = "okay";
 

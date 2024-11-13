@@ -78,8 +78,8 @@ struct matrix_keypad_platform_data {
 
 	uint32_t	enable_gpio;
 #ifdef CONFIG_KEYBOARD_MATRIX_SHUTDOWN
-	uint32_t	shutdown_keycode1;
-	uint32_t	shutdown_keycode2;
+	uint32_t	shutdown_code1; //First scancode pair (16MSb+16LSb) for shutdown
+	uint32_t	shutdown_code2; //Second scancode pair (16MSb+16LSb) for shutdown
 	uint32_t	shutdown_count;
 #endif
 };
