@@ -783,7 +783,22 @@ static void smsc95xx_init_mac_address(struct usbnet *dev)
 	 */
 	if(dev->udev->descriptor.idProduct == 0xec00)
 	{
-	  if (dev->udev->bus->busnum==1)
+	  int eth1_usbbus = 1; //Default mapping usb1->eth1
+	  int eth2_usbbus = 2; //Default mapping usb2->eth2
+#ifdef CONFIG_OF
+	  //USB->eth default mapping may be overridden by devicetree
+	  struct device_node *node;
+	  node = of_find_node_by_name(NULL, "smsc95xx_mapping");
+	  if(node)
+	  {
+		  eth1_usbbus=0;
+		  eth2_usbbus=0;
+		  of_property_read_u32(node, "eth1-usbbus", &eth1_usbbus);
+		  of_property_read_u32(node, "eth2-usbbus", &eth2_usbbus);
+		  of_node_put(node);
+	  }
+#endif
+	  if (dev->udev->bus->busnum==eth1_usbbus)
 	    if (is_valid_ether_addr(pcie_mac1addr))
 	    {
 	      memcpy(dev->net->dev_addr, pcie_mac1addr, ETH_ALEN);
@@ -791,7 +806,7 @@ static void smsc95xx_init_mac_address(struct usbnet *dev)
 	      return;
 	    }
 
-	  if (dev->udev->bus->busnum==2)
+	  if (dev->udev->bus->busnum==eth2_usbbus)
 	    if (is_valid_ether_addr(pcie_mac2addr))
 	    {
 	      memcpy(dev->net->dev_addr, pcie_mac2addr, ETH_ALEN);

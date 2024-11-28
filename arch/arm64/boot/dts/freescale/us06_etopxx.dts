@@ -25,6 +25,11 @@
 		serial2 = &uart4;
 	};
 
+	smsc95xx_mapping {
+		eth1-usbbus = <3>;
+		eth2-usbbus = <1>;
+	};
+
 	backlight0: backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm4 0 50000 0>;
@@ -249,6 +254,11 @@
 	/delete-property/dma-names;
 };
 
+/* Additional USB bus enable */
+&usb_dwc3_0 {
+	dr_mode = "host";
+	status = "okay";
+};
 
 &iomuxc {
 	pinctrl-names = "default";
