@@ -409,6 +409,15 @@
 	status = "okay";
 };
 
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart4>;
+	fsl,uart-has-rtscts;
+	status = "okay";
+	/delete-property/dmas;
+	/delete-property/dma-names;
+};
+
 /* SD-card */
 &usdhc2 {
 	wp-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
@@ -523,6 +532,13 @@
 				MX8MM_IOMUXC_GPIO1_IO03_GPIO1_IO3   0x11
 				MX8MM_IOMUXC_GPIO1_IO01_GPIO1_IO1   0x11
 				MX8MM_IOMUXC_GPIO1_IO00_GPIO1_IO0   0x11
+			>;
+		};
+
+		pinctrl_uart4: uart4grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_ECSPI2_SCLK_UART4_DCE_RX 0x140
+				MX8MM_IOMUXC_ECSPI2_MOSI_UART4_DCE_TX 0x140
 			>;
 		};
 
