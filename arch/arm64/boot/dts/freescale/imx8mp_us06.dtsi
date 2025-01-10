@@ -80,6 +80,11 @@
 
 };
 
+&cpu_pd_wait {
+	/delete-property/ compatible;
+	/*arm,psci-suspend-param = <0x0>;*/
+};
+
 &A53_0 {
 	cpu-supply = <&buck2>;
 };
