@@ -349,6 +349,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x62>;
+		nxp,totem-pole;
 
 		red@0 {
 			label = "red";
