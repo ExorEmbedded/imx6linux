@@ -158,6 +158,15 @@
 			sound-dai = <&tas5721>;
 		};
 	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		case_open {
+			label = "CaseOpen";
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_F2>;
+		};
+	};
 };
 
 &leds{
